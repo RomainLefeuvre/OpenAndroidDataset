@@ -8,6 +8,7 @@
 package fr.inria.diverse;
 
 import it.unimi.dsi.big.webgraph.LazyLongIterator;
+import it.unimi.dsi.big.webgraph.NodeIterator;
 import it.unimi.dsi.big.webgraph.labelling.ArcLabelledNodeIterator;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.logging.ProgressLogger;
@@ -21,6 +22,7 @@ import org.softwareheritage.graph.labels.DirEntry;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Stack;
@@ -42,16 +44,17 @@ public class Test_Bidi {
 
     }
 
-    public    HashMap<Long,String> getFilesNodeMatchingName(String fileName){
-        Stack<Long> forwardStack = new Stack<>();
-        HashSet<Long> forwardVisited = new HashSet<Long>();
-
-
-        HashMap<Long,String> results = new HashMap<Long, String>();
+    public  HashMap<Long,String> getFilesNodeMatchingName(String fileName){
         ArcLabelledNodeIterator it = graph.getForwardGraph().labelledNodeIterator();
-        while (it.hasNext()) {
-            long srcNode = it.nextLong();
+        HashMap<Long,String> results = new HashMap<Long, String>();
+        results.putAll(this.getFilesNodeMatchingName(fileName,it));
+        return results;
+    }
 
+    public  HashMap<Long,String> getFilesNodeMatchingName(String fileName,ArcLabelledNodeIterator it){
+        HashMap<Long,String> results = new HashMap<>();
+
+        while (it.hasNext()) {
             ArcLabelledNodeIterator.LabelledArcIterator s = it.successors();
             long dstNode;
             while ((dstNode = s.nextLong()) >= 0) {
@@ -76,7 +79,7 @@ public class Test_Bidi {
         return results;
     }
 
-    public long getRepoFromFileNode(long nodeId){
+        public long getRepoFromFileNode(long nodeId){
         Instant inst1 = Instant.now();
 
         SwhBidirectionalGraph graph_copy = graph.copy();
@@ -94,6 +97,51 @@ public class Test_Bidi {
 
         return current;
 
+    }
+
+
+    public ArcLabelledNodeIterator[] splitArcLabelledNodeIterators(int howMany, SwhUnidirectionalGraph graph ) {
+        if (graph.numNodes() == 0L && howMany == 0) {
+            return new ArcLabelledNodeIterator[0];
+        } else if (howMany < 1) {
+            throw new IllegalArgumentException();
+        } else {
+            ArcLabelledNodeIterator[] result = new ArcLabelledNodeIterator[howMany];
+            if (!graph.hasCopiableIterators()) {
+                result[0] = graph.labelledNodeIterator();
+                return result;
+            } else {
+                long n = graph.numNodes();
+                int m = (int)Math.ceil((double)n / (double)howMany);
+                if (graph.randomAccess()) {
+                    int i = 0;
+
+                    for(long from = (long)0; from < n; ++i) {
+                        result[i] = graph.labelledNodeIterator(from).copy(from + (long)m);
+                        from += (long)m;
+                    }
+
+                    Arrays.fill(result, i, result.length, NodeIterator.EMPTY);
+                    return result;
+                } else {
+                    ArcLabelledNodeIterator nodeIterator = graph.labelledNodeIterator();
+                    int i = 0;
+
+                    for(long nextNode = 0L; i < result.length && nodeIterator.hasNext(); ++nextNode) {
+                        if (nextNode % (long)m == 0L) {
+                            result[i++] = nodeIterator.copy(nextNode + (long)m);
+                        }
+
+                        long node = nodeIterator.nextLong();
+
+                        assert node == nextNode;
+                    }
+
+                    Arrays.fill(result, i, result.length, NodeIterator.EMPTY);
+                    return result;
+                }
+            }
+        }
     }
 
     public static void main(String[] args) throws IOException, ClassNotFoundException {
