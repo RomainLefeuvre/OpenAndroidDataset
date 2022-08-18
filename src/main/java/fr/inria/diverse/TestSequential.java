@@ -35,13 +35,10 @@ public class TestSequential {
     final static Logger logger = LoggerFactory.getLogger(TestSequential.class);
     static Gson gson = new Gson();
     String graphUri;
-    String transposedGraphUri;
-    SwhUnidirectionalGraph graph;
     SwhUnidirectionalGraph transposedGraph;
 
-    public TestSequential(String graphUri, String transposedGraphUri) {
+    public TestSequential(String graphUri) {
         this.graphUri = graphUri;
-        this.transposedGraphUri = transposedGraphUri;
 
     }
 
@@ -49,9 +46,8 @@ public class TestSequential {
         Type listType = new TypeToken<List<Long>>() {
         }.getType();
         Instant inst1 = Instant.now();
-        TestSequential test = new TestSequential("/home/rlefeuvr/Workspaces/SAND_BOX/SW_GRAPH/python_data/graph", "/home/rlefeuvr/Workspaces/SAND_BOX/SW_GRAPH/python_data/graph-transposed");
-
-        test.loadForwardGraph();
+        TestSequential test = new TestSequential("/home/rlefeuvr/Workspaces/SAND_BOX/SW_GRAPH/python_data/graph-transposed");
+        test.loadTransposedGraph();
 
 
         List<Long> filesNodeIdMatchingName = new ArrayList<>(test.getFilesNodeMatchingName("README"));
@@ -60,9 +56,7 @@ public class TestSequential {
             gson.toJson(filesNodeIdMatchingName, listType, f);
         }
 
-        test.wipeForwardGraph();
 
-        test.loadTransposedGraph();
         filesNodeIdMatchingName = gson.fromJson(Files.newBufferedReader(Paths.get("tmp.json")), listType);
         Map<Long, String> results = test.getOriginNodeFromFileNodeIds(filesNodeIdMatchingName);
 
@@ -73,28 +67,13 @@ public class TestSequential {
 
     }
 
-    public void loadForwardGraph() {
-        ProgressLogger pl = new ProgressLogger(logger, 10, TimeUnit.SECONDS);
-        try {
-            graph = SwhUnidirectionalGraph.loadLabelled(this.graphUri, pl);
-            graph.properties.loadLabelNames();
-            graph.properties.loadMessages();
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void wipeForwardGraph() {
-        this.graph = null;
-        System.gc();
-    }
 
     public void loadTransposedGraph() {
         ProgressLogger pl = new ProgressLogger(logger, 10, TimeUnit.SECONDS);
         try {
-            transposedGraph = SwhUnidirectionalGraph.load(this.transposedGraphUri, pl);
+            transposedGraph = SwhUnidirectionalGraph.loadLabelled(this.graphUri, pl);
             transposedGraph.properties.loadMessages();
+            transposedGraph.properties.loadLabelNames();
 
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -104,10 +83,10 @@ public class TestSequential {
     public Set<Long> getFilesNodeMatchingName(String fileName) throws InterruptedException {
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(14);
         HashSet<Long> results = new HashSet<>();
-        long size = graph.numNodes();
+        long size = transposedGraph.numNodes();
         System.out.println("Num of nodes: " + size);
         long i = 0;
-        ArcLabelledNodeIterator it = graph.labelledNodeIterator();
+        ArcLabelledNodeIterator it = transposedGraph.labelledNodeIterator();
 
         while (it.hasNext()) {
             long current = it.nextLong();
@@ -116,7 +95,7 @@ public class TestSequential {
                 System.out.println(results.size());
                 System.out.println("Node " + i + " over " + size);
             }
-            if (graph.getNodeType(current) == SwhType.DIR) {
+            if (transposedGraph.getNodeType(current) == SwhType.CNT) {
                 ArcLabelledNodeIterator.LabelledArcIterator s = it.successors();
                 long dstNode;
                 while ((dstNode = s.nextLong()) >= 0) {
@@ -124,11 +103,11 @@ public class TestSequential {
 
                     for (DirEntry label : labels) {
                         //If the destination node is a file
-                        if (graph.getNodeType(dstNode) == SwhType.CNT) {
-                            String n = new String(graph.getLabelName(label.filenameId));
+                        if (transposedGraph.getNodeType(dstNode) == SwhType.DIR) {
+                            String n = new String(transposedGraph.getLabelName(label.filenameId));
                             long finalDstNode = dstNode;
                             if (n.equals(fileName)) {
-                                results.add(dstNode);
+                                results.add(current);
                             }
                         }
                     }
