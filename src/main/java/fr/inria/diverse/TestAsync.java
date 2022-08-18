@@ -14,15 +14,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.softwareheritage.graph.SwhBidirectionalGraph;
 import org.softwareheritage.graph.SwhType;
-import org.softwareheritage.graph.SwhUnidirectionalGraph;
 import org.softwareheritage.graph.labels.DirEntry;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class TestAsync {
     final static Logger logger = LoggerFactory.getLogger(TestAsync.class);
@@ -36,11 +36,19 @@ public class TestAsync {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
+    public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
+        ProgressLogger pl = new ProgressLogger(logger, 10, TimeUnit.SECONDS);
+        TestAsync test = new TestAsync(SwhBidirectionalGraph.loadLabelled("/home/rlefeuvr/Workspaces/SAND_BOX/SW_GRAPH/python_data/graph", pl));
+        Instant inst1 = Instant.now();
+        ConcurrentHashMap<Long, String> t = test.getFilesNodeMatchingName("README");
+        Instant inst2 = Instant.now();
+
+        System.out.println("Elapsed Time: " + Duration.between(inst1, inst2).toSeconds());
 
 
+    }
 
     public ConcurrentHashMap<Long, String> getFilesNodeMatchingName(String fileName) throws InterruptedException {
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(14);
@@ -65,13 +73,15 @@ public class TestAsync {
 
                     for (DirEntry label : labels) {
                         //If the destination node is a file
-
                         if (graph.getNodeType(dstNode) == SwhType.CNT) {
                             String n = new String(graph.getLabelName(label.filenameId));
                             long finalDstNode = dstNode;
-                            if (n.equals(fileName) ) {
+                            if (n.equals(fileName)) {
+                                //Only performe parallel computations on this tasks, if we parallelize previous
+                                // instructions it lower performances. Certainly because of the context copy which have
+                                // an higher cost than the computation itself
                                 executor.submit(() -> {
-                                    if(!results.containsKey(finalDstNode)){
+                                    if (!results.containsKey(finalDstNode)) {
                                         long originNode = getOriginNodeFromFileNode(finalDstNode);
                                         String originUrl = graph.getUrl(originNode);
                                         results.put(finalDstNode, originUrl);
@@ -86,7 +96,7 @@ public class TestAsync {
         executor.shutdown();
         //Waiting Tasks
         while (!executor.awaitTermination(20, TimeUnit.SECONDS)) {
-            System.out.println("Node traversal completed, waiting for asynchronous tasks. Tasks performed "+executor.getCompletedTaskCount()+" over "+ executor.getTaskCount());
+            System.out.println("Node traversal completed, waiting for asynchronous tasks. Tasks performed " + executor.getCompletedTaskCount() + " over " + executor.getTaskCount());
         }
 
         System.out.println(results.size());
@@ -109,19 +119,5 @@ public class TestAsync {
             pred = graph_copy.predecessors(current).nextLong();
         }
         return current;
-
-    }
-
-
-    public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
-        ProgressLogger pl = new ProgressLogger(logger, 10, TimeUnit.SECONDS);
-        TestAsync test = new TestAsync(SwhBidirectionalGraph.loadLabelled("/home/rlefeuvr/Workspaces/SAND_BOX/SW_GRAPH/python_data/graph", pl));
-        Instant inst1 = Instant.now();
-        test.getFilesNodeMatchingName("README");
-        Instant inst2 = Instant.now();
-
-        System.out.println("Elapsed Time: " + Duration.between(inst1, inst2).toMinutes());
-
-
     }
 }
