@@ -21,18 +21,20 @@ import org.softwareheritage.graph.labels.DirEntry;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class TestSequential {
     final static Logger logger = LoggerFactory.getLogger(TestSequential.class);
+    public static boolean startFromCheckpoint = true;
     static Gson gson = new Gson();
     String graphUri;
     SwhUnidirectionalGraph transposedGraph;
@@ -48,18 +50,22 @@ public class TestSequential {
         Instant inst1 = Instant.now();
         TestSequential test = new TestSequential("/home/rlefeuvr/Workspaces/SAND_BOX/SW_GRAPH/python_data/graph-transposed");
         test.loadTransposedGraph();
+        List<Long> filesNodeIdMatchingName = null;
+        if (!startFromCheckpoint) {
+            filesNodeIdMatchingName = new ArrayList<>(test.getFilesNodeMatchingName("README"));
+            try (FileWriter f = new FileWriter("tmp.json", StandardCharsets.UTF_8);
+            ) {
+                gson.toJson(filesNodeIdMatchingName, listType, f);
+            }
 
-
-        List<Long> filesNodeIdMatchingName = new ArrayList<>(test.getFilesNodeMatchingName("README"));
-        try (FileWriter f = new FileWriter("tmp.json");
-        ) {
-            gson.toJson(filesNodeIdMatchingName, listType, f);
+        } else {
+            filesNodeIdMatchingName = gson.fromJson(Files.newBufferedReader(Paths.get("tmp.json"), StandardCharsets.UTF_8), listType);
         }
-
-
-        filesNodeIdMatchingName = gson.fromJson(Files.newBufferedReader(Paths.get("tmp.json")), listType);
         Map<Long, String> results = test.getOriginNodeFromFileNodeIds(filesNodeIdMatchingName);
-
+        try (FileWriter f = new FileWriter("res.json");
+        ) {
+            gson.toJson(results, f);
+        }
         Instant inst2 = Instant.now();
 
         System.out.println("Elapsed Time: " + Duration.between(inst1, inst2).toSeconds());
@@ -81,13 +87,12 @@ public class TestSequential {
     }
 
     public Set<Long> getFilesNodeMatchingName(String fileName) throws InterruptedException {
-        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(14);
+        SwhUnidirectionalGraph localGraph = transposedGraph.copy();
         HashSet<Long> results = new HashSet<>();
         long size = transposedGraph.numNodes();
         System.out.println("Num of nodes: " + size);
         long i = 0;
-        ArcLabelledNodeIterator it = transposedGraph.labelledNodeIterator();
-
+        ArcLabelledNodeIterator it = localGraph.labelledNodeIterator();
         while (it.hasNext()) {
             long current = it.nextLong();
             i++;
@@ -95,7 +100,7 @@ public class TestSequential {
                 System.out.println(results.size());
                 System.out.println("Node " + i + " over " + size);
             }
-            if (transposedGraph.getNodeType(current) == SwhType.CNT) {
+            if (localGraph.getNodeType(current) == SwhType.CNT) {
                 ArcLabelledNodeIterator.LabelledArcIterator s = it.successors();
                 long dstNode;
                 while ((dstNode = s.nextLong()) >= 0) {
@@ -103,8 +108,8 @@ public class TestSequential {
 
                     for (DirEntry label : labels) {
                         //If the destination node is a file
-                        if (transposedGraph.getNodeType(dstNode) == SwhType.DIR) {
-                            String n = new String(transposedGraph.getLabelName(label.filenameId));
+                        if (localGraph.getNodeType(dstNode) == SwhType.DIR) {
+                            String n = new String(localGraph.getLabelName(label.filenameId));
                             long finalDstNode = dstNode;
                             if (n.equals(fileName)) {
                                 results.add(current);
@@ -114,23 +119,29 @@ public class TestSequential {
                 }
             }
         }
-        executor.shutdown();
-        //Waiting Tasks
-        while (!executor.awaitTermination(20, TimeUnit.SECONDS)) {
-            System.out.println("Node traversal completed, waiting for asynchronous tasks. Tasks performed " + executor.getCompletedTaskCount() + " over " + executor.getTaskCount());
-        }
+
 
         System.out.println(results.size());
         return results;
 
     }
 
-    public Map<Long, String> getOriginNodeFromFileNodeIds(List<Long> nodes) {
-        Map<Long, String> results = nodes.parallelStream().map((id) -> {
-            long originNode = getOriginNodeFromFileNode(id);
-            String originUrl = transposedGraph.getUrl(originNode);
-            return new AbstractMap.SimpleEntry<Long, String>(id, originUrl == null ? "" : originUrl);
-        }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    public Map<Long, String> getOriginNodeFromFileNodeIds(List<Long> nodes) throws InterruptedException {
+        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(14);
+        ConcurrentHashMap<Long, String> results = new ConcurrentHashMap<>();
+        for (Long node : nodes) {
+            executor.submit(() -> {
+                long originNode = getOriginNodeFromFileNode(node);
+                String originUrl = transposedGraph.getUrl(originNode);
+                results.put(node, originUrl);
+
+            });
+        }
+        executor.shutdown();
+        //Waiting Tasks
+        while (!executor.awaitTermination(20, TimeUnit.SECONDS)) {
+            System.out.println("Node traversal completed, waiting for asynchronous tasks. Tasks performed " + executor.getCompletedTaskCount() + " over " + executor.getTaskCount());
+        }
         return results;
     }
 
