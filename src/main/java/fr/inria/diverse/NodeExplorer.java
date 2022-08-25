@@ -71,7 +71,6 @@ public class NodeExplorer {
             transposedGraph = SwhUnidirectionalGraph.loadLabelled(this.graphUri);
             transposedGraph.properties.loadMessages();
             transposedGraph.properties.loadLabelNames();
-
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -102,7 +101,6 @@ public class NodeExplorer {
                                 //If the destination node is a Directory
                                 if (graphCopy.getNodeType(dstNode) == SwhType.DIR) {
                                     boolean done = false;
-                                    int i = 0;
                                     while (!done) {
                                         String currentFileName = "";
                                         currentFileName = new String(graphCopy.getLabelName(label.filenameId));
@@ -113,13 +111,11 @@ public class NodeExplorer {
                                                 results.put(currentNodeId, originUrl);
                                             } else {
                                                 results.put(currentNodeId, "");
-                                                logger.warn("Origin not found for file node :" + transposedGraph.getSWHID(currentNodeId));
+                                                logger.warn("Origin not found for file node :" + currentNodeId);
                                             }
 
                                         }
                                         done = true;
-                                        i++;
-
                                     }
                                 }
                             }
@@ -136,7 +132,6 @@ public class NodeExplorer {
         }
         logger.info("Total number of nodes found : " + results.size());
         return results;
-
     }
 
 
