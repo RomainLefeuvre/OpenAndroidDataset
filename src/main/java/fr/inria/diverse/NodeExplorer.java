@@ -26,11 +26,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 public class NodeExplorer {
-    public static int threadNumber = 14;
-    static Gson gson = new Gson();
-    private static Logger logger = LogManager.getLogger(NodeExplorer.class);
-    String graphUri;
-    SwhUnidirectionalGraph transposedGraph;
+    static Logger logger = LogManager.getLogger(NodeExplorer.class);
+    static int threadNumber = 14;
+
+    private String graphUri;
+    private SwhUnidirectionalGraph transposedGraph;
 
     public NodeExplorer(String graphUri) {
         this.graphUri = graphUri;
@@ -39,14 +39,19 @@ public class NodeExplorer {
     public static void main(String[] args) throws IOException, InterruptedException {
         Instant inst1 = Instant.now();
         NodeExplorer nodeExplorer = new NodeExplorer("/home/rlefeuvr/Workspaces/SAND_BOX/SW_GRAPH/python_smallest_data/graph-transposed");
+
         nodeExplorer.loadTransposedGraph();
+
         Map<Long, String> results = nodeExplorer.getFilesNodeMatchingName("README");
         Instant inst2 = Instant.now();
         logger.debug("Elapsed Time: " + Duration.between(inst1, inst2).toSeconds());
         try (FileWriter f = new FileWriter("res.json");
         ) {
+            Gson gson = new Gson();
             gson.toJson(results, f);
         }
+
+
     }
 
     /**
@@ -55,7 +60,7 @@ public class NodeExplorer {
      * @param nodeId
      * @return originNodeId
      */
-    public static long getOriginNodeFromFileNode(long nodeId, SwhUnidirectionalGraph graph_copy) {
+    public long getOriginNodeFromFileNode(long nodeId, SwhUnidirectionalGraph graph_copy) {
         LazyLongIterator it = graph_copy.successors(nodeId);
         Long pred = it.nextLong();
         Long current = nodeId;
@@ -66,6 +71,31 @@ public class NodeExplorer {
         return current;
     }
 
+
+    /**
+     * recursive version that
+     * <p>
+     * public long getOriginNodeFromFileNode(long nodeId, SwhUnidirectionalGraph graph_copy) {
+     * LazyLongIterator it = graph_copy.successors(nodeId);
+     * Long current = nodeId;
+     * for (Long predecessor = it.nextLong(); predecessor != -1; predecessor = it.nextLong()) {
+     * long pred = graph_copy.successors(current).nextLong();
+     * if (pred != -1) {
+     * return pred;
+     * }
+     * if (graph_copy.getNodeType(pred) == SwhType.ORI) {
+     * return current;
+     * } else {
+     * long search = getOriginNodeFromFileNode(pred, graph_copy);
+     * if (search != -1) {
+     * return search;
+     * }
+     * }
+     * }
+     * <p>
+     * return -1;
+     * }
+     */
     public void loadTransposedGraph() {
         try {
             transposedGraph = SwhUnidirectionalGraph.loadLabelled(this.graphUri);
@@ -77,12 +107,9 @@ public class NodeExplorer {
     }
 
     public Map<Long, String> getFilesNodeMatchingName(String targetedFileName) throws InterruptedException {
-
         Executor executor = new Executor(threadNumber);
-
         ConcurrentHashMap<Long, String> results = new ConcurrentHashMap<>();
         long size = transposedGraph.numNodes();
-
         logger.debug("Num of nodes: " + size);
         for (int thread = 0; thread < threadNumber; thread++) {
             long finalThread = thread;
@@ -100,22 +127,17 @@ public class NodeExplorer {
                             for (DirEntry label : labels) {
                                 //If the destination node is a Directory
                                 if (graphCopy.getNodeType(dstNode) == SwhType.DIR) {
-                                    boolean done = false;
-                                    while (!done) {
-                                        String currentFileName = "";
-                                        currentFileName = new String(graphCopy.getLabelName(label.filenameId));
-                                        if (currentFileName.equals(targetedFileName) && !results.containsKey(currentNodeId)) {
-                                            long originNodeId = getOriginNodeFromFileNode(currentNodeId, graphCopy);
-                                            String originUrl = transposedGraph.getUrl(originNodeId);
-                                            if (originUrl != null) {
-                                                results.put(currentNodeId, originUrl);
-                                            } else {
-                                                results.put(currentNodeId, "");
-                                                logger.warn("Origin not found for file node :" + currentNodeId);
-                                            }
-
+                                    String currentFileName = new String(graphCopy.getLabelName(label.filenameId));
+                                    if (currentFileName.equals(targetedFileName) && !results.containsKey(currentNodeId)) {
+                                        long originNodeId = getOriginNodeFromFileNode(currentNodeId, graphCopy);
+                                        String originUrl = transposedGraph.getUrl(originNodeId);
+                                        if (originUrl != null) {
+                                            results.put(currentNodeId, originUrl);
+                                        } else {
+                                            results.put(currentNodeId, "");
+                                            logger.warn("Origin not found for file node :" + currentNodeId);
                                         }
-                                        done = true;
+
                                     }
                                 }
                             }
@@ -131,7 +153,13 @@ public class NodeExplorer {
             logger.info("Node traversal completed, waiting for asynchronous tasks. Tasks performed " + executor.getCompletedTaskCount() + " over " + executor.getTaskCount());
         }
         logger.info("Total number of nodes found : " + results.size());
+        int errorNb = results.values().stream().reduce(0,
+                (subtotal, value) -> subtotal + ((!value.equals("")) ? 1 : 0),                 //accumulator
+                (subtotal1, subtotal2) -> subtotal1 + subtotal2); //combiner
+        logger.info("Total number of error : " + errorNb);
         return results;
+
+
     }
 
 

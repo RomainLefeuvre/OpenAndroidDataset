@@ -1,0 +1,14 @@
+graph/2022-04-25/compressed/graph.labels.fcl.bytearray
+graph/2022-04-25/compressed/graph.labels.fcl.pointers
+graph/2022-04-25/compressed/graph.labels.fcl.properties
+graph/2022-04-25/compressed/graph.mph
+graph/2022-04-25/compressed/graph.node2type.map
+graph/2022-04-25/compressed/graph.obl
+graph/2022-04-25/compressed/graph-transposed.offsets
+graph/2022-04-25/compressed/graph.order
+graph/2022-04-25/compressed/graph-transposed.properties
+graph/2022-04-25/compressed/graph.property.message.bin
+graph/2022-04-25/compressed/graph.property.message.offset.bin
+graph/2022-04-25/compressed/graph-transposed-labelled.labeloffsets
+graph/2022-04-25/compressed/graph-transposed-labelled.labels
+graph/2022-04-25/compressed/graph-transposed-labelled.properties
