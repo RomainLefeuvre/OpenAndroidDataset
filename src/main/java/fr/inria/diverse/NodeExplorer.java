@@ -98,9 +98,15 @@ public class NodeExplorer {
      */
     public void loadTransposedGraph() {
         try {
+            logger.info("Loading graph");
             transposedGraph = SwhUnidirectionalGraph.loadLabelled(this.graphUri);
+            logger.info("Graph loaded");
+            logger.info("Loading message");
             transposedGraph.properties.loadMessages();
+            logger.info("Message loaded");
+            logger.info("Loading label");
             transposedGraph.properties.loadLabelNames();
+            logger.info("Label loaded");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
