@@ -13,6 +13,7 @@ import it.unimi.dsi.big.webgraph.LazyLongIterator;
 import it.unimi.dsi.big.webgraph.labelling.ArcLabelledNodeIterator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.softwareheritage.graph.SWHID;
 import org.softwareheritage.graph.SwhType;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 import org.softwareheritage.graph.labels.DirEntry;
@@ -24,6 +25,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class NodeExplorer {
     static Logger logger = LogManager.getLogger(NodeExplorer.class);
@@ -49,6 +51,12 @@ public class NodeExplorer {
         ) {
             Gson gson = new Gson();
             gson.toJson(results, f);
+        }
+
+        try (FileWriter f = new FileWriter("resWithSwhIds.json");
+        ) {
+            Gson gson = new Gson();
+            gson.toJson(nodeExplorer.toSwhIds(results), f);
         }
 
 
@@ -143,6 +151,8 @@ public class NodeExplorer {
                                             results.put(currentNodeId, "");
                                             logger.warn("Origin not found for file node :" + currentNodeId);
                                         }
+                                        successors = graphCopy.labelledSuccessors(currentNodeId);
+
 
                                     }
                                 }
@@ -166,6 +176,15 @@ public class NodeExplorer {
         return results;
 
 
+    }
+
+    public Map<SWHID, String> toSwhIds(Map<Long, String> map) {
+        return map.entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                        entry -> this.transposedGraph.getSWHID(entry.getKey()),
+                        Map.Entry::getValue
+                ));
     }
 
 
