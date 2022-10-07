@@ -33,9 +33,12 @@ public class NodeExplorer {
 
     private String graphUri;
     private SwhUnidirectionalGraph transposedGraph;
+    private Map<Long, String> results;
 
     public NodeExplorer(String graphUri) {
+
         this.graphUri = graphUri;
+        this.results = new ConcurrentHashMap<>();
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -44,19 +47,15 @@ public class NodeExplorer {
 
         nodeExplorer.loadTransposedGraph();
 
-        Map<Long, String> results = nodeExplorer.getFilesNodeMatchingName("README");
+        nodeExplorer.getFilesNodeMatchingName("README");
         Instant inst2 = Instant.now();
         logger.debug("Elapsed Time: " + Duration.between(inst1, inst2).toSeconds());
-        try (FileWriter f = new FileWriter("res.json");
-        ) {
-            Gson gson = new Gson();
-            gson.toJson(results, f);
-        }
+
 
         try (FileWriter f = new FileWriter("resWithSwhIds.json");
         ) {
             Gson gson = new Gson();
-            gson.toJson(nodeExplorer.toSwhIds(results), f);
+            gson.toJson(nodeExplorer.toSwhIds(nodeExplorer.results), f);
         }
 
 
@@ -149,7 +148,7 @@ public class NodeExplorer {
                                             results.put(currentNodeId, originUrl);
                                         } else {
                                             results.put(currentNodeId, "");
-                                            logger.warn("Origin not found for file node :" + currentNodeId);
+                                            logger.debug("Origin not found for file node :" + currentNodeId);
                                         }
                                         successors = graphCopy.labelledSuccessors(currentNodeId);
 
@@ -165,12 +164,16 @@ public class NodeExplorer {
         }
         executor.shutdown();
         //Waiting Tasks
-        while (!executor.awaitTermination(20, TimeUnit.SECONDS)) {
+        while (!executor.awaitTermination(5, TimeUnit.MINUTES)) {
             logger.info("Node traversal completed, waiting for asynchronous tasks. Tasks performed " + executor.getCompletedTaskCount() + " over " + executor.getTaskCount());
+            logger.info("Partial checkpoint");
+            export_raw_results();
         }
+        export_raw_results();
+
         logger.info("Total number of nodes found : " + results.size());
         int errorNb = results.values().stream().reduce(0,
-                (subtotal, value) -> subtotal + ((!value.equals("")) ? 1 : 0),                 //accumulator
+                (subtotal, value) -> subtotal + ((value.equals("")) ? 1 : 0),                 //accumulator
                 (subtotal1, subtotal2) -> subtotal1 + subtotal2); //combiner
         logger.info("Total number of error : " + errorNb);
         return results;
@@ -187,5 +190,14 @@ public class NodeExplorer {
                 ));
     }
 
+    public void export_raw_results() {
+        try (FileWriter f = new FileWriter("res.json");
+        ) {
+            Gson gson = new Gson();
+            gson.toJson(results, f);
+        } catch (IOException e) {
+            throw new RuntimeException("Erro while saving", e);
+        }
+    }
 
 }
