@@ -20,45 +20,38 @@ import org.softwareheritage.graph.labels.DirEntry;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class NodeExplorer {
     static Logger logger = LogManager.getLogger(NodeExplorer.class);
-    static int threadNumber = 14;
-
-    private String graphUri;
+    //The number of threads that will be used for parrallel computations
+    private final int threadNumber;
+    //The results map <ID,origin>
+    private final Map<Long, String> results;
     private SwhUnidirectionalGraph transposedGraph;
-    private Map<Long, String> results;
+    private Properties props;
 
-    public NodeExplorer(String graphUri) {
-
-        this.graphUri = graphUri;
+    public NodeExplorer() {
+        this.loadPropertyFile();
+        threadNumber = Integer.parseInt(this.props.getProperty("threadNumber"));
         this.results = new ConcurrentHashMap<>();
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws InterruptedException {
         Instant inst1 = Instant.now();
-        NodeExplorer nodeExplorer = new NodeExplorer("/home/rlefeuvr/Workspaces/SAND_BOX/SW_GRAPH/python_smallest_data/graph-transposed");
-
+        NodeExplorer nodeExplorer = new NodeExplorer();
         nodeExplorer.loadTransposedGraph();
-
-        nodeExplorer.getFilesNodeMatchingName("README");
+        nodeExplorer.getFilesNodeMatchingName();
         Instant inst2 = Instant.now();
         logger.debug("Elapsed Time: " + Duration.between(inst1, inst2).toSeconds());
-
-
-        try (FileWriter f = new FileWriter("resWithSwhIds.json");
-        ) {
-            Gson gson = new Gson();
-            gson.toJson(nodeExplorer.toSwhIds(nodeExplorer.results), f);
-        }
-
-
+        nodeExplorer.export_shwid_results();
     }
 
     /**
@@ -69,8 +62,8 @@ public class NodeExplorer {
      */
     public long getOriginNodeFromFileNode(long nodeId, SwhUnidirectionalGraph graph_copy) {
         LazyLongIterator it = graph_copy.successors(nodeId);
-        Long pred = it.nextLong();
-        Long current = nodeId;
+        long pred = it.nextLong();
+        long current = nodeId;
         while (pred != -1 && graph_copy.getNodeType(current) != SwhType.ORI) {
             current = pred;
             pred = graph_copy.successors(current).nextLong();
@@ -78,35 +71,17 @@ public class NodeExplorer {
         return current;
     }
 
-
     /**
-     * recursive version that
-     * <p>
-     * public long getOriginNodeFromFileNode(long nodeId, SwhUnidirectionalGraph graph_copy) {
-     * LazyLongIterator it = graph_copy.successors(nodeId);
-     * Long current = nodeId;
-     * for (Long predecessor = it.nextLong(); predecessor != -1; predecessor = it.nextLong()) {
-     * long pred = graph_copy.successors(current).nextLong();
-     * if (pred != -1) {
-     * return pred;
-     * }
-     * if (graph_copy.getNodeType(pred) == SwhType.ORI) {
-     * return current;
-     * } else {
-     * long search = getOriginNodeFromFileNode(pred, graph_copy);
-     * if (search != -1) {
-     * return search;
-     * }
-     * }
-     * }
-     * <p>
-     * return -1;
-     * }
+     * Load the transposed Graph
      */
     public void loadTransposedGraph() {
         try {
-            logger.info("Loading graph");
-            transposedGraph = SwhUnidirectionalGraph.loadLabelled(this.graphUri);
+
+            logger.info("Loading graph " + (this.isMappedMemoryActivated() ? "MAPPED MODE" : ""));
+            transposedGraph = this.isMappedMemoryActivated() ?
+                    SwhUnidirectionalGraph.loadLabelledMapped(this.props.getProperty("graphPath")) :
+                    SwhUnidirectionalGraph.loadLabelled(this.props.getProperty("graphPath"))
+            ;
             logger.info("Graph loaded");
             logger.info("Loading message");
             transposedGraph.properties.loadMessages();
@@ -115,13 +90,57 @@ public class NodeExplorer {
             transposedGraph.properties.loadLabelNames();
             logger.info("Label loaded");
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error while loading the graph", e);
         }
     }
 
-    public Map<Long, String> getFilesNodeMatchingName(String targetedFileName) throws InterruptedException {
+    /**
+     * For a node "currentNodeId", if it is a file node, find its name and its corresponding origin uri then add
+     * the pair <fileNodeId,origin uri> to the results map
+     *
+     * @param currentNodeId the node id
+     * @param graphCopy     the graph copy used in the thread
+     */
+    public void processNode(long currentNodeId, SwhUnidirectionalGraph graphCopy) {
+        ArcLabelledNodeIterator.LabelledArcIterator successors = graphCopy.labelledSuccessors(currentNodeId);
+        //If the current node is a file
+        if (graphCopy.getNodeType(currentNodeId) == SwhType.CNT) {
+            long dstNode;
+            //Iterates over successors ie. finding parents directory
+            while ((dstNode = successors.nextLong()) >= 0) {
+                final DirEntry[] labels = (DirEntry[]) successors.label().get();
+                for (DirEntry label : labels) {
+                    //If the destination node is a Directory
+                    if (graphCopy.getNodeType(dstNode) == SwhType.DIR) {
+                        String currentFileName = new String(graphCopy.getLabelName(label.filenameId));
+                        if (currentFileName.equals(this.props.getProperty("targetedFileName")) && !results.containsKey(currentNodeId)) {
+                            long originNodeId = getOriginNodeFromFileNode(currentNodeId, graphCopy);
+                            String originUrl = transposedGraph.getUrl(originNodeId);
+                            if (originUrl != null) {
+                                results.put(currentNodeId, originUrl);
+                            } else {
+                                results.put(currentNodeId, "");
+                                logger.debug("Origin not found for file node :" + currentNodeId);
+                            }
+                            successors = graphCopy.labelledSuccessors(currentNodeId);
+
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Traverse the graph node list to find file node having the searching name and populating the results hashmap <FileNodeId,originUri>
+     * FileNodeId : the file node id (graph id not swh id)
+     * originUri : the uri of the repo, for instance a git uri
+     *
+     * @return the results HashMap <FileNodeId,originUri>
+     * @throws InterruptedException
+     */
+    public Map<Long, String> getFilesNodeMatchingName() throws InterruptedException {
         Executor executor = new Executor(threadNumber);
-        ConcurrentHashMap<Long, String> results = new ConcurrentHashMap<>();
         long size = transposedGraph.numNodes();
         logger.debug("Num of nodes: " + size);
         for (int thread = 0; thread < threadNumber; thread++) {
@@ -132,57 +151,33 @@ public class NodeExplorer {
                     if ((currentNodeId - finalThread) % 1000000 == 0) {
                         logger.info("Node " + currentNodeId + " over " + size + " thread " + finalThread + "-- Nodes founds :" + results.size());
                     }
-                    ArcLabelledNodeIterator.LabelledArcIterator successors = graphCopy.labelledSuccessors(currentNodeId);
-                    if (graphCopy.getNodeType(currentNodeId) == SwhType.CNT) {
-                        long dstNode;
-                        while ((dstNode = successors.nextLong()) >= 0) {
-                            final DirEntry[] labels = (DirEntry[]) successors.label().get();
-                            for (DirEntry label : labels) {
-                                //If the destination node is a Directory
-                                if (graphCopy.getNodeType(dstNode) == SwhType.DIR) {
-                                    String currentFileName = new String(graphCopy.getLabelName(label.filenameId));
-                                    if (currentFileName.equals(targetedFileName) && !results.containsKey(currentNodeId)) {
-                                        long originNodeId = getOriginNodeFromFileNode(currentNodeId, graphCopy);
-                                        String originUrl = transposedGraph.getUrl(originNodeId);
-                                        if (originUrl != null) {
-                                            results.put(currentNodeId, originUrl);
-                                        } else {
-                                            results.put(currentNodeId, "");
-                                            logger.debug("Origin not found for file node :" + currentNodeId);
-                                        }
-                                        successors = graphCopy.labelledSuccessors(currentNodeId);
-
-
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    this.processNode(currentNodeId, graphCopy);
                 }
             });
-
         }
         executor.shutdown();
         //Waiting Tasks
-        while (!executor.awaitTermination(5, TimeUnit.MINUTES)) {
+        while (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
             logger.info("Node traversal completed, waiting for asynchronous tasks. Tasks performed " + executor.getCompletedTaskCount() + " over " + executor.getTaskCount());
             logger.info("Partial checkpoint");
             export_raw_results();
         }
         export_raw_results();
-
         logger.info("Total number of nodes found : " + results.size());
         int errorNb = results.values().stream().reduce(0,
                 (subtotal, value) -> subtotal + ((value.equals("")) ? 1 : 0),                 //accumulator
-                (subtotal1, subtotal2) -> subtotal1 + subtotal2); //combiner
+                Integer::sum); //combiner
         logger.info("Total number of error : " + errorNb);
         return results;
-
-
     }
 
-    public Map<SWHID, String> toSwhIds(Map<Long, String> map) {
-        return map.entrySet()
+    /**
+     * Return the results hash map with swh id instead of graph id as keys
+     *
+     * @return the swhid map
+     */
+    public Map<SWHID, String> toSwhIds() {
+        return results.entrySet()
                 .stream()
                 .collect(Collectors.toMap(
                         entry -> this.transposedGraph.getSWHID(entry.getKey()),
@@ -190,14 +185,48 @@ public class NodeExplorer {
                 ));
     }
 
+    /**
+     * Export the results hashmap and save it to res.json file
+     */
     public void export_raw_results() {
-        try (FileWriter f = new FileWriter("res.json");
+        try (FileWriter f = new FileWriter("res.json")
         ) {
             Gson gson = new Gson();
             gson.toJson(results, f);
         } catch (IOException e) {
-            throw new RuntimeException("Erro while saving", e);
+            throw new RuntimeException("Error while saving", e);
         }
+    }
+
+    /**
+     * Export the swhid results hashmap and save it to resWithSwhIds.json"
+     */
+    public void export_shwid_results() {
+        try (FileWriter f = new FileWriter("resWithSwhIds.json")
+        ) {
+            Gson gson = new Gson();
+            gson.toJson(this.toSwhIds(), f);
+        } catch (IOException e) {
+            throw new RuntimeException("Error while saving", e);
+        }
+
+    }
+
+    private void loadPropertyFile() {
+        String propFileName = "config.properties";
+        try (InputStream input = getClass().getClassLoader().getResourceAsStream(propFileName)) {
+            this.props = new Properties();
+            if (input == null) {
+                throw new RuntimeException("unable to find config.properties");
+            }
+            props.load(input);
+        } catch (IOException e) {
+            throw new RuntimeException("Error while loading config file", e);
+        }
+    }
+
+    private boolean isMappedMemoryActivated() {
+        return this.props.getProperty("loadingMode").equals("MAPPED");
     }
 
 }

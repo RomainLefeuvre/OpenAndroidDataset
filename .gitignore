@@ -2,3 +2,4 @@
 /.idea/
 /target/
 res.json
+/src/main/resources/config.properties
