@@ -3,3 +3,4 @@
 /target/
 res.json
 /src/main/resources/config.properties
+/resWithSwhIds.json
