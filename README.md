@@ -13,7 +13,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/github_username/repo_name">
+  <a href="https://github.com/RomainLefeuvre/swhExp">
     <img src="images/logo.png" alt="Logo" width="800" >
   </a>
 
@@ -22,14 +22,14 @@
   <p align="center">
     project_description
     <br />
-    <a href="https://github.com/github_username/repo_name"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/RomainLefeuvre/swhExp"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/github_username/repo_name">View Demo</a>
+    <a href="https://github.com/RomainLefeuvre/swhExp">View Demo</a>
     ·
-    <a href="https://github.com/github_username/repo_name/issues">Report Bug</a>
+    <a href="https://github.com/RomainLefeuvre/swhExp/issues">Report Bug</a>
     ·
-    <a href="https://github.com/github_username/repo_name/issues">Request Feature</a>
+    <a href="https://github.com/RomainLefeuvre/swhExp/issues">Request Feature</a>
   </p>
 </div>
 
@@ -123,7 +123,6 @@ simply open an issue with the tag "enhancement". Don't forget to give the projec
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-
 <!-- LICENSE -->
 
 ## License
@@ -131,7 +130,6 @@ simply open an issue with the tag "enhancement". Don't forget to give the projec
 Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 
 
 <!-- CONTACT -->
@@ -143,33 +141,27 @@ Project Link: [https://github.com/RomainLefeuvre/swhExp](https://github.com/Roma
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-
-
-
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 
-[contributors-shield]: https://img.shields.io/github/contributors/github_username/repo_name.svg?style=for-the-badge
+[contributors-shield]: https://img.shields.io/github/contributors/RomainLefeuvre/swhExp.svg?style=for-the-badge
 
-[contributors-url]: https://github.com/github_username/repo_name/graphs/contributors
+[contributors-url]: https://github.com/RomainLefeuvre/swhExp/graphs/contributors
 
-[forks-shield]: https://img.shields.io/github/forks/github_username/repo_name.svg?style=for-the-badge
+[forks-shield]: https://img.shields.io/github/forks/RomainLefeuvre/swhExp.svg?style=for-the-badge
 
-[forks-url]: https://github.com/github_username/repo_name/network/members
+[forks-url]: https://github.com/RomainLefeuvre/swhExp/network/members
 
-[stars-shield]: https://img.shields.io/github/stars/github_username/repo_name.svg?style=for-the-badge
+[stars-shield]: https://img.shields.io/github/stars/RomainLefeuvre/swhExp.svg?style=for-the-badge
 
-[stars-url]: https://github.com/github_username/repo_name/stargazers
+[stars-url]: https://github.com/RomainLefeuvre/swhExp/stargazers
 
-[issues-shield]: https://img.shields.io/github/issues/github_username/repo_name.svg?style=for-the-badge
+[issues-shield]: https://img.shields.io/github/issues/RomainLefeuvre/swhExp.svg?style=for-the-badge
 
-[issues-url]: https://github.com/github_username/repo_name/issues
+[issues-url]: https://github.com/RomainLefeuvre/swhExp/issues
 
-[license-shield]: https://img.shields.io/github/license/github_username/repo_name.svg?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/RomainLefeuvre/swhExp.svg?style=for-the-badge
 
-[license-url]: https://github.com/github_username/repo_name/blob/master/LICENSE.txt
+[license-url]: https://github.com/RomainLefeuvre/swhExp/blob/master/LICENSE.txt
 
-[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-
-[linkedin-url]: https://linkedin.com/in/linkedin_username
 
