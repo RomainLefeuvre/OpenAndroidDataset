@@ -1,6 +1,7 @@
 package fr.inria.diverse;
 
 import com.google.gson.Gson;
+import fr.inria.diverse.tools.Configuration;
 import fr.inria.diverse.tools.Executor;
 import it.unimi.dsi.big.webgraph.LazyLongIterator;
 import it.unimi.dsi.big.webgraph.labelling.ArcLabelledNodeIterator;
@@ -13,27 +14,21 @@ import org.softwareheritage.graph.labels.DirEntry;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class NodeExplorer {
     static Logger logger = LogManager.getLogger(NodeExplorer.class);
-    //The number of threads that will be used for parrallel computations
-    private final int threadNumber;
     //The results map <ID,origin>
     private final Map<Long, String> results;
+    public Configuration config = Configuration.getInstance();
     private SwhUnidirectionalGraph transposedGraph;
-    private Properties props;
 
     public NodeExplorer() {
-        this.loadPropertyFile();
-        threadNumber = Integer.parseInt(this.props.getProperty("threadNumber"));
         this.results = new ConcurrentHashMap<>();
     }
 
@@ -72,8 +67,8 @@ public class NodeExplorer {
 
             logger.info("Loading graph " + (this.isMappedMemoryActivated() ? "MAPPED MODE" : ""));
             transposedGraph = this.isMappedMemoryActivated() ?
-                    SwhUnidirectionalGraph.loadLabelledMapped(this.props.getProperty("graphPath")) :
-                    SwhUnidirectionalGraph.loadLabelled(this.props.getProperty("graphPath"))
+                    SwhUnidirectionalGraph.loadLabelledMapped(this.config.getGraphPath()) :
+                    SwhUnidirectionalGraph.loadLabelled(this.config.getGraphPath())
             ;
             logger.info("Graph loaded");
             logger.info("Loading message");
@@ -106,7 +101,7 @@ public class NodeExplorer {
                     //If the destination node is a Directory
                     if (graphCopy.getNodeType(dstNode) == SwhType.DIR) {
                         String currentFileName = new String(graphCopy.getLabelName(label.filenameId));
-                        if (currentFileName.equals(this.props.getProperty("targetedFileName")) && !results.containsKey(currentNodeId)) {
+                        if (currentFileName.equals(this.config.getTargetedFileName()) && !results.containsKey(currentNodeId)) {
                             long originNodeId = getOriginNodeFromFileNode(currentNodeId, graphCopy);
                             String originUrl = transposedGraph.getUrl(originNodeId);
                             if (originUrl != null) {
@@ -133,14 +128,14 @@ public class NodeExplorer {
      * @throws InterruptedException
      */
     public Map<Long, String> getFilesNodeMatchingName() throws InterruptedException {
-        Executor executor = new Executor(threadNumber);
+        Executor executor = new Executor(this.config.getThreadNumber());
         long size = transposedGraph.numNodes();
         logger.debug("Num of nodes: " + size);
-        for (int thread = 0; thread < threadNumber; thread++) {
+        for (int thread = 0; thread < this.config.getThreadNumber(); thread++) {
             long finalThread = thread;
             SwhUnidirectionalGraph graphCopy = transposedGraph.copy();
             executor.execute(() -> {
-                for (long currentNodeId = finalThread; currentNodeId < size; currentNodeId = currentNodeId + threadNumber) {
+                for (long currentNodeId = finalThread; currentNodeId < size; currentNodeId = currentNodeId + this.config.getThreadNumber()) {
                     if ((currentNodeId - finalThread) % 1000000 == 0) {
                         logger.info("Node " + currentNodeId + " over " + size + " thread " + finalThread + "-- Nodes founds :" + results.size());
                     }
@@ -205,21 +200,10 @@ public class NodeExplorer {
 
     }
 
-    private void loadPropertyFile() {
-        String propFileName = "config.properties";
-        try (InputStream input = getClass().getClassLoader().getResourceAsStream(propFileName)) {
-            this.props = new Properties();
-            if (input == null) {
-                throw new RuntimeException("unable to find config.properties");
-            }
-            props.load(input);
-        } catch (IOException e) {
-            throw new RuntimeException("Error while loading config file", e);
-        }
-    }
 
     private boolean isMappedMemoryActivated() {
-        return this.props.getProperty("loadingMode").equals("MAPPED");
+        return this.config.getLoadingMode().equals("MAPPED");
     }
+
 
 }

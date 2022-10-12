@@ -1,4 +1,4 @@
-package fr.inria.diverse.restClient;
+package fr.inria.diverse.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

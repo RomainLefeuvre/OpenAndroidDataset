@@ -1,5 +1,6 @@
 package fr.inria.diverse.restClient;
 
+import fr.inria.diverse.model.ResolveDto;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
