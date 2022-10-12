@@ -16,7 +16,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 public class NodeExplorer {
     static Logger logger = LogManager.getLogger(NodeExplorer.class);
     //The results map <ID,origin>
-    private final Map<Long, String> results;
+    private final Map<Long, List<String>> results;
     public Configuration config = Configuration.getInstance();
     private SwhUnidirectionalGraph transposedGraph;
 
@@ -43,12 +43,12 @@ public class NodeExplorer {
     }
 
     /**
-     * Retrieve the OriginNodeId from a FileNodeId
+     * Retrieve one of the origin of a file node id
      *
      * @param nodeId
      * @return originNodeId
      */
-    public long getOriginNodeFromFileNode(long nodeId, SwhUnidirectionalGraph graph_copy) {
+    public long getAnOriginNodeFromFileNode(long nodeId, SwhUnidirectionalGraph graph_copy) {
         LazyLongIterator it = graph_copy.successors(nodeId);
         long pred = it.nextLong();
         long current = nodeId;
@@ -57,6 +57,35 @@ public class NodeExplorer {
             pred = graph_copy.successors(current).nextLong();
         }
         return current;
+    }
+
+    /**
+     * Retrieve the OriginNodeId from a FileNodeId
+     *
+     * @param nodeId
+     * @return originNodeId
+     */
+    public Set<Long> getOriginNodeFromFileNode(long nodeId, SwhUnidirectionalGraph graph_copy) {
+        Stack<Long> stack = new Stack<>();
+        stack.push(nodeId);
+        Set<Long> results = new HashSet<>();
+        HashSet<Long> visited = new HashSet<Long>();
+        while (!stack.isEmpty()) {
+            long currentNodeId = stack.pop();
+
+            if (graph_copy.getNodeType(currentNodeId) == SwhType.ORI) {
+                results.add(currentNodeId);
+            } else {
+                LazyLongIterator it = graph_copy.successors(currentNodeId);
+                for (long predNodeId; (predNodeId = it.nextLong()) != -1; ) {
+                    if (!visited.contains(predNodeId)) {
+                        stack.push(predNodeId);
+                        visited.add(predNodeId);
+                    }
+                }
+            }
+        }
+        return results;
     }
 
     /**
@@ -102,14 +131,12 @@ public class NodeExplorer {
                     if (graphCopy.getNodeType(dstNode) == SwhType.DIR) {
                         String currentFileName = new String(graphCopy.getLabelName(label.filenameId));
                         if (currentFileName.equals(this.config.getTargetedFileName()) && !results.containsKey(currentNodeId)) {
-                            long originNodeId = getOriginNodeFromFileNode(currentNodeId, graphCopy);
-                            String originUrl = transposedGraph.getUrl(originNodeId);
-                            if (originUrl != null) {
-                                results.put(currentNodeId, originUrl);
-                            } else {
-                                results.put(currentNodeId, "");
-                                logger.debug("Origin not found for file node :" + currentNodeId);
-                            }
+                            Set<Long> originNodeIds = getOriginNodeFromFileNode(currentNodeId, graphCopy);
+                            List<String> originUrls = originNodeIds.stream().map(id -> {
+                                String originUrl = transposedGraph.getUrl(id);
+                                return originUrl != null ? originUrl : "";
+                            }).collect(Collectors.toList());
+                            results.put(currentNodeId, originUrls);
                             successors = graphCopy.labelledSuccessors(currentNodeId);
 
                         }
@@ -127,7 +154,7 @@ public class NodeExplorer {
      * @return the results HashMap <FileNodeId,originUri>
      * @throws InterruptedException
      */
-    public Map<Long, String> getFilesNodeMatchingName() throws InterruptedException {
+    public Map<Long, List<String>> getFilesNodeMatchingName() throws InterruptedException {
         Executor executor = new Executor(this.config.getThreadNumber());
         long size = transposedGraph.numNodes();
         logger.debug("Num of nodes: " + size);
@@ -164,7 +191,7 @@ public class NodeExplorer {
      *
      * @return the swhid map
      */
-    public Map<SWHID, String> toSwhIds() {
+    public Map<SWHID, List<String>> toSwhIds() {
         return results.entrySet()
                 .stream()
                 .collect(Collectors.toMap(
