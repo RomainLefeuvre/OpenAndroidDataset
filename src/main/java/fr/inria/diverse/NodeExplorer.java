@@ -1,6 +1,7 @@
 package fr.inria.diverse;
 
 import com.google.gson.Gson;
+import fr.inria.diverse.model.FileInfo;
 import fr.inria.diverse.tools.Configuration;
 import fr.inria.diverse.tools.Executor;
 import it.unimi.dsi.big.webgraph.LazyLongIterator;
@@ -24,12 +25,14 @@ import java.util.stream.Collectors;
 public class NodeExplorer {
     static Logger logger = LogManager.getLogger(NodeExplorer.class);
     //The results map <ID,origin>
-    private final Map<Long, List<String>> results;
     public Configuration config = Configuration.getInstance();
     private SwhUnidirectionalGraph transposedGraph;
+    private ConcurrentHashMap<Long, FileInfo> globallyAndEffectivelyVisited;
+    private ConcurrentHashMap<Long, List<String>> results;
 
     public NodeExplorer() {
         this.results = new ConcurrentHashMap<>();
+        this.globallyAndEffectivelyVisited = new ConcurrentHashMap<>();
     }
 
     public static void main(String[] args) throws InterruptedException {
@@ -65,27 +68,37 @@ public class NodeExplorer {
      * @param nodeId
      * @return originNodeId
      */
-    public Set<Long> getOriginNodeFromFileNode(long nodeId, SwhUnidirectionalGraph graph_copy) {
+    public FileInfo getOriginNodeFromFileNode(long nodeId, SwhUnidirectionalGraph graph_copy) {
         Stack<Long> stack = new Stack<>();
         stack.push(nodeId);
-        Set<Long> results = new HashSet<>();
-        HashSet<Long> visited = new HashSet<Long>();
+        FileInfo res = new FileInfo(nodeId);
+        HashSet<Long> locallyVisited = new HashSet<Long>();
         while (!stack.isEmpty()) {
             long currentNodeId = stack.pop();
-
-            if (graph_copy.getNodeType(currentNodeId) == SwhType.ORI) {
-                results.add(currentNodeId);
+            //If this node as been effectively visited, retrieve the computed results
+            if (globallyAndEffectivelyVisited.contains(currentNodeId)) {
+                FileInfo toImport = globallyAndEffectivelyVisited.get(currentNodeId);
+                res.importFrom(toImport);
             } else {
-                LazyLongIterator it = graph_copy.successors(currentNodeId);
-                for (long predNodeId; (predNodeId = it.nextLong()) != -1; ) {
-                    if (!visited.contains(predNodeId)) {
-                        stack.push(predNodeId);
-                        visited.add(predNodeId);
+                globallyAndEffectivelyVisited.put(currentNodeId, res);
+                if (graph_copy.getNodeType(currentNodeId) == SwhType.ORI) {
+                    res.addOrigin("todo", 0, currentNodeId, "todo");
+                } else {
+                    LazyLongIterator it = graph_copy.successors(currentNodeId);
+                    for (long predNodeId; (predNodeId = it.nextLong()) != -1; ) {
+                        if (!locallyVisited.contains(predNodeId)) {
+                            stack.push(predNodeId);
+                            locallyVisited.add(predNodeId);
+                        }
                     }
                 }
             }
+
+
         }
-        return results;
+
+        // res.initDone();
+        return res;
     }
 
     /**
@@ -131,7 +144,7 @@ public class NodeExplorer {
                     if (graphCopy.getNodeType(dstNode) == SwhType.DIR) {
                         String currentFileName = new String(graphCopy.getLabelName(label.filenameId));
                         if (currentFileName.equals(this.config.getTargetedFileName()) && !results.containsKey(currentNodeId)) {
-                            Set<Long> originNodeIds = getOriginNodeFromFileNode(currentNodeId, graphCopy);
+                            Set<Long> originNodeIds = getOriginNodeFromFileNode(currentNodeId, graphCopy).getOriginIds();
                             List<String> originUrls = originNodeIds.stream().map(id -> {
                                 String originUrl = transposedGraph.getUrl(id);
                                 return originUrl != null ? originUrl : "";
@@ -173,7 +186,7 @@ public class NodeExplorer {
         executor.shutdown();
         //Waiting Tasks
         while (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
-            logger.info("Node traversal completed, waiting for asynchronous tasks. Tasks performed " + executor.getCompletedTaskCount() + " over " + executor.getTaskCount());
+            logger.info("Waiting for asynchronous tasks. Tasks performed " + executor.getCompletedTaskCount() + " over " + executor.getTaskCount());
             logger.info("Partial checkpoint");
             export_raw_results();
         }
