@@ -46,8 +46,11 @@ public class NodeExplorer {
     public void loadTransposedGraph() {
         try {
 
-            logger.info("Loading graph in RAM");
-            graph = SwhUnidirectionalGraph.load(this.config.getGraphPath());
+            logger.info("Loading graph " + (this.isMappedMemoryActivated() ? "MAPPED MODE" : ""));
+            graph = this.isMappedMemoryActivated() ?
+                    SwhUnidirectionalGraph.loadLabelledMapped(this.config.getGraphPath()) :
+                    SwhUnidirectionalGraph.loadLabelled(this.config.getGraphPath())
+            ;
             logger.info("Graph loaded");
         } catch (IOException e) {
             throw new RuntimeException("Error while loading the graph", e);
@@ -112,4 +115,9 @@ public class NodeExplorer {
             throw new RuntimeException("Error while saving", e);
         }
     }
+
+    private boolean isMappedMemoryActivated() {
+        return this.config.getLoadingMode().equals("MAPPED");
+    }
+
 }
