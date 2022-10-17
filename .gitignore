@@ -6,3 +6,4 @@ res.json
 /resWithSwhIds.json
 dependency-reduced-pom.xml
 /.idea/
+/origins.json
