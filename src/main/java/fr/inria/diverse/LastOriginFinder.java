@@ -2,6 +2,7 @@ package fr.inria.diverse;
 
 import fr.inria.diverse.model.Branch;
 import fr.inria.diverse.model.Origin;
+import fr.inria.diverse.model.Revision;
 import fr.inria.diverse.model.Snapshot;
 import it.unimi.dsi.big.webgraph.labelling.ArcLabelledNodeIterator;
 import org.softwareheritage.graph.SwhType;
@@ -12,6 +13,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class LastOriginFinder extends GraphExplorer {
     List<Origin> origins = new LinkedList<>();
@@ -36,8 +38,6 @@ public class LastOriginFinder extends GraphExplorer {
 
         while (!queue.isEmpty()) {
             long currentNodeId = queue.poll();
-            System.out.println(graphCopy.getNodeType(currentNodeId));
-
             ArcLabelledNodeIterator.LabelledArcIterator it = graphCopy.labelledSuccessors(currentNodeId);
             for (long neighborNodeId; (neighborNodeId = it.nextLong()) != -1; ) {
                 if (graphCopy.getNodeType(currentNodeId) == SwhType.SNP) {
@@ -55,26 +55,28 @@ public class LastOriginFinder extends GraphExplorer {
                                     .labelledSuccessors(neighborNodeId);
                             revNode = childIt.nextLong();
                             if (graphCopy.getNodeType(revNode) != SwhType.REV) {
-                                logger.warn("not a revision as expected");
+                                logger.warn("Not a revision as expected " + graphCopy.getNodeType(revNode) +
+                                        " instead for current node " + currentNodeId);
                             }
                             if (childIt.nextLong() != -1) {
-                                logger.warn("iterator not ended as expected");
+                                logger.warn("Iterator not ended as expected at current node " + currentNodeId);
                             }
                         }
 
                         String url = new String(graphCopy.getLabelName(label.filenameId));
                         String branchName = url.replace("refs/heads/", "");
                         if (Branch.BranchType.isABranchType(branchName)) {
-                            logger.info("Branch Name " + branchName);
+                            logger.debug("Branch Name " + branchName);
                             Long currentTimestamp = graphCopy.getCommitterTimestamp(revNode);
                             if (currentTimestamp != null) {
-                                Snapshot currentSnap = new Snapshot(branchName, currentTimestamp, currentNodeId);
+                                Revision currentRevision = new Revision(revNode, currentTimestamp);
+                                Snapshot currentSnap = new Snapshot(branchName, currentNodeId, currentRevision);
                                 originNode.checkSnapshotAndUpdate(currentSnap);
                             } else {
-                                logger.warn("Impossible to get current revision timestamp for revision " + currentNodeId);
+                                logger.debug("Impossible to get current revision timestamp for revision " + currentNodeId);
                             }
                         } else {
-                            logger.warn("Not a valid branch name " + branchName);
+                            logger.debug("Not a valid branch name " + branchName);
                         }
                     }
                 } else {
@@ -88,6 +90,48 @@ public class LastOriginFinder extends GraphExplorer {
 
     }
 
+    /**
+     * Not relevant, as each revision points to its parents...
+     * Maybe browse the transposed graph? But I'm not even sure it's useful.
+     * So let's drop it
+     *
+     * @param snapshot
+     * @param graphCopy
+     */
+    public void findLastRevision(Snapshot snapshot, SwhUnidirectionalGraph graphCopy) {
+        Queue<Long> queue = new ArrayDeque<>();
+        HashSet<Long> visited = new HashSet<Long>();
+        queue.add(snapshot.getRev().getNodeId());
+        visited.add(snapshot.getRev().getNodeId());
+
+        while (!queue.isEmpty()) {
+            long currentNodeId = queue.poll();
+            SwhType currentNodeType = graphCopy.getNodeType(currentNodeId);
+            if (currentNodeType == SwhType.REV) {
+
+                Long currentTimestamp = graphCopy.getCommitterTimestamp(currentNodeId);
+                if (currentTimestamp != null) {
+                    Revision currentRev = new Revision(currentNodeId, currentTimestamp);
+                    if (currentRev.compareTo(snapshot.getRev()) > 1) {
+                        logger.info("Updating snapshot rev from " + snapshot.getRev()
+                                .getCommitTimestamp() + " to " + currentRev.getCommitTimestamp());
+                        snapshot.setRev(currentRev);
+                    }
+                } else {
+                    logger.warn("Something went wrong, the timestamp of node " + currentNodeId + " is null");
+                }
+            }
+
+            ArcLabelledNodeIterator.LabelledArcIterator it = graphCopy.labelledSuccessors(currentNodeId);
+            for (long neighborNodeId; (neighborNodeId = it.nextLong()) != -1; ) {
+                if (graphCopy.getNodeType(neighborNodeId) == SwhType.REV && !visited.contains(neighborNodeId)) {
+                    queue.add(neighborNodeId);
+                    visited.add(neighborNodeId);
+                }
+            }
+        }
+    }
+
     @Override
     void nodeListParrallelTraversalAction(long currentNodeId, SwhUnidirectionalGraph graphCopy) {
         if (graphCopy.getNodeType(currentNodeId) == SwhType.ORI) {
@@ -98,17 +142,29 @@ public class LastOriginFinder extends GraphExplorer {
             } else {
                 Origin currentOrigin = new Origin(originUrl, currentNodeId);
                 findLastSnap(currentOrigin, graphCopy);
-                synchronized (origins) {
-                    origins.add(currentOrigin);
-                }
+                if (currentOrigin.getSnapshot() != null)
+                    //Not relevant .. see function comment ...
+                    // findLastRevision(currentOrigin.getSnapshot(), graphCopy);
+                    synchronized (origins) {
+                        origins.add(currentOrigin);
+                    }
             }
         }
     }
 
     @Override
     void nodeListParrallelCheckpointAction() {
-        this.exportFile(origins, "origins.json");
+        synchronized (origins) {
+            this.exportFile(origins, "origins.json");
+        }
     }
+
+    void nodeListEndCheckpointAction() {
+        this.exportFile(origins, "origins.json");
+        this.exportFile(origins.stream().filter(origin -> origin.getSnapshot() != null)
+                .collect(Collectors.toList()), "originsFiltered.json");
+    }
+
 
     @Override
     void run() {

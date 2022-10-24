@@ -3,19 +3,21 @@ package fr.inria.diverse.model;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class Origin {
+public class Origin extends Node {
     static Logger logger = LogManager.getLogger(Snapshot.class);
 
     private Snapshot snapshot;
     private String originUrl;
-    private long nodeId;
 
     public Origin(String originUrl, long nodeId) {
+        super(nodeId);
         this.originUrl = originUrl;
         this.nodeId = nodeId;
     }
 
     public Origin() {
+        super();
+
     }
 
     /**
@@ -46,11 +48,4 @@ public class Origin {
         this.originUrl = originUrl;
     }
 
-    public long getNodeId() {
-        return nodeId;
-    }
-
-    public void setNodeId(long nodeId) {
-        this.nodeId = nodeId;
-    }
 }

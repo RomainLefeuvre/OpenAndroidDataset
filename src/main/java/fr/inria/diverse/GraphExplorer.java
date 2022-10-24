@@ -1,7 +1,6 @@
 package fr.inria.diverse;
 
 import com.google.gson.Gson;
-import fr.inria.diverse.model.Origin;
 import fr.inria.diverse.tools.Configuration;
 import fr.inria.diverse.tools.Executor;
 import org.apache.logging.log4j.LogManager;
@@ -10,8 +9,6 @@ import org.softwareheritage.graph.SwhUnidirectionalGraph;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public abstract class GraphExplorer {
@@ -44,8 +41,7 @@ public abstract class GraphExplorer {
      * @return the list of origins
      * @throws InterruptedException
      */
-    public List<Origin> nodeListParrallelTraversal() throws InterruptedException {
-        List<Origin> origins = new LinkedList<>();
+    public void nodeListParrallelTraversal() throws InterruptedException {
         Executor executor = new Executor(this.config.getThreadNumber());
         long size = graph.numNodes();
         logger.debug("Num of nodes: " + size);
@@ -55,7 +51,7 @@ public abstract class GraphExplorer {
             executor.execute(() -> {
                 for (long currentNodeId = finalThread; currentNodeId < size; currentNodeId = currentNodeId + this.config.getThreadNumber()) {
                     if ((currentNodeId - finalThread) % 1000000 == 0) {
-                        logger.info("Node " + currentNodeId + " over " + size + " thread " + finalThread + "-- Nodes founds :" + origins.size());
+                        logger.info("Node " + currentNodeId + " over " + size + " thread " + finalThread);
                     }
                     this.nodeListParrallelTraversalAction(currentNodeId, graphCopy);
                 }
@@ -63,18 +59,23 @@ public abstract class GraphExplorer {
         }
         executor.shutdown();
         //Waiting Tasks
-        while (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
+        while (!executor.awaitTermination(200, TimeUnit.SECONDS)) {
             logger.info("Node traversal completed, waiting for asynchronous tasks. Tasks performed " + executor.getCompletedTaskCount() + " over " + executor.getTaskCount());
             logger.info("Partial checkpoint");
             this.nodeListParrallelCheckpointAction();
         }
-        this.nodeListParrallelCheckpointAction();
-        return origins;
+        this.nodeListEndCheckpointAction();
     }
 
-    abstract void nodeListParrallelTraversalAction(long currentNodeId, SwhUnidirectionalGraph graphCopy);
+    void nodeListParrallelTraversalAction(long currentNodeId, SwhUnidirectionalGraph graphCopy) {
+    }
 
-    abstract void nodeListParrallelCheckpointAction();
+    void nodeListParrallelCheckpointAction() {
+    }
+
+    void nodeListEndCheckpointAction() {
+    }
+
 
     /**
      * Export an object of Type T to a json file named filename+".json"
