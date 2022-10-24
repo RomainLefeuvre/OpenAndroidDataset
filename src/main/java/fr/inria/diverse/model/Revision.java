@@ -9,9 +9,9 @@ public class Revision extends Node {
 
     }
 
-    public Revision(long nodeId, long lastCommitId) {
+    public Revision(long nodeId, long commitTimestamp) {
         super(nodeId);
-        this.commitTimestamp = lastCommitId;
+        this.commitTimestamp = commitTimestamp;
     }
 
     public int compareTo(@NotNull Revision rev) {

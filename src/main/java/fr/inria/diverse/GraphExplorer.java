@@ -9,6 +9,10 @@ import org.softwareheritage.graph.SwhUnidirectionalGraph;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Reader;
+import java.lang.reflect.Type;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 
 public abstract class GraphExplorer {
@@ -36,14 +40,12 @@ public abstract class GraphExplorer {
     }
 
     /**
-     * Traverse the graph node list to find origin node
+     * Iterate over the graph list of nodes in a parallel way
      *
-     * @return the list of origins
      * @throws InterruptedException
      */
-    public void nodeListParrallelTraversal() throws InterruptedException {
+    public void exploreGraphNode(long size) throws InterruptedException {
         Executor executor = new Executor(this.config.getThreadNumber());
-        long size = graph.numNodes();
         logger.debug("Num of nodes: " + size);
         for (int thread = 0; thread < this.config.getThreadNumber(); thread++) {
             long finalThread = thread;
@@ -53,7 +55,7 @@ public abstract class GraphExplorer {
                     if ((currentNodeId - finalThread) % 1000000 == 0) {
                         logger.info("Node " + currentNodeId + " over " + size + " thread " + finalThread);
                     }
-                    this.nodeListParrallelTraversalAction(currentNodeId, graphCopy);
+                    this.exploreGraphNodeAction(currentNodeId, graphCopy);
                 }
             });
         }
@@ -62,18 +64,23 @@ public abstract class GraphExplorer {
         while (!executor.awaitTermination(200, TimeUnit.SECONDS)) {
             logger.info("Node traversal completed, waiting for asynchronous tasks. Tasks performed " + executor.getCompletedTaskCount() + " over " + executor.getTaskCount());
             logger.info("Partial checkpoint");
-            this.nodeListParrallelCheckpointAction();
+            this.exploreGraphNodeCheckpointAction();
         }
-        this.nodeListEndCheckpointAction();
     }
 
-    void nodeListParrallelTraversalAction(long currentNodeId, SwhUnidirectionalGraph graphCopy) {
+    /**
+     * Function call by exploreGraphNode at each node
+     *
+     * @param currentNodeId the current Node id
+     * @param graphCopy     the current graphCopy (thread safe approach)
+     */
+    void exploreGraphNodeAction(long currentNodeId, SwhUnidirectionalGraph graphCopy) {
     }
 
-    void nodeListParrallelCheckpointAction() {
-    }
-
-    void nodeListEndCheckpointAction() {
+    /**
+     * Function called peridically by exploreGraphNode to perform partial backups
+     */
+    void exploreGraphNodeCheckpointAction() {
     }
 
 
@@ -89,6 +96,16 @@ public abstract class GraphExplorer {
         ) {
             Gson gson = new Gson();
             gson.toJson(objectToSave, f);
+        } catch (IOException e) {
+            throw new RuntimeException("Error while saving", e);
+        }
+    }
+
+    public <T> T loadFile(String fileName, Type type) {
+        Gson gson = new Gson();
+        try (Reader reader = Files.newBufferedReader(Paths.get(fileName))) {
+            return gson.fromJson(reader, type);
+
         } catch (IOException e) {
             throw new RuntimeException("Error while saving", e);
         }

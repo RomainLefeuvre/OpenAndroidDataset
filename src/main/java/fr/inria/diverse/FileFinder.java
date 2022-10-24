@@ -1,20 +1,22 @@
 package fr.inria.diverse;
 
+import com.google.common.reflect.TypeToken;
+import fr.inria.diverse.model.Origin;
 import it.unimi.dsi.big.webgraph.labelling.ArcLabelledNodeIterator;
 import org.softwareheritage.graph.SwhType;
+import org.softwareheritage.graph.SwhUnidirectionalGraph;
 import org.softwareheritage.graph.labels.DirEntry;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.lang.reflect.Type;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Stack;
+import java.util.*;
 
 public class FileFinder extends GraphExplorer {
+
+    List<Result> results = new ArrayList<>();
+    ArrayList<Origin> origins;
 
     public static void main(String[] args) throws InterruptedException, IOException {
         Instant inst1 = Instant.now();
@@ -24,21 +26,44 @@ public class FileFinder extends GraphExplorer {
         logger.debug("Elapsed Time: " + Duration.between(inst1, inst2).toSeconds());
     }
 
-    public void findTargetedNode(long srcNodeId) {
-        LinkedList<DFSNode> matchingFileNode = new LinkedList<>();
-        DFSNode currentNode = new DFSNode(srcNodeId);
+    @Override
+    void exploreGraphNodeAction(long currentNodeId, SwhUnidirectionalGraph graphCopy) {
+        findTargetedNode(origins.get((int) currentNodeId), graphCopy);
+    }
+
+    @Override
+    void exploreGraphNodeCheckpointAction() {
+        synchronized (results) {
+            this.exportFile(results, "finalResult.json");
+        }
+    }
+
+    @Override
+    public void exploreGraphNode(long size) throws InterruptedException {
+        super.exploreGraphNode(size);
+        logger.info("Number of file node matching name found : " + results.size());
+
+        //Add final save
+        this.exportFile(results, "finalResult.json");
+    }
+
+    /**
+     * Find revision files/folder
+     *
+     * @param originNode
+     */
+    public void findTargetedNode(Origin originNode, SwhUnidirectionalGraph graphCopy) {
+        DFSNode currentNode = new DFSNode(originNode.getSnapshot().getRev().getNodeId());
         Stack<DFSNode> stack = new Stack<>();
         HashSet<Long> visited = new HashSet<>();
         stack.push(currentNode);
-        visited.add(srcNodeId);
-        long revCount = 0;
+        visited.add(originNode.getSnapshot().getRev().getNodeId());
+        List<DFSNode> res = new LinkedList<>();
         while (!stack.isEmpty()) {
             currentNode = stack.pop();
-            if (graph.getNodeType(currentNode.getId()) == SwhType.REV)
-                revCount++;
-            ArcLabelledNodeIterator.LabelledArcIterator it = graph.labelledSuccessors(currentNode.getId());
+            ArcLabelledNodeIterator.LabelledArcIterator it = graphCopy.labelledSuccessors(currentNode.getId());
             for (long neighborNodeId; (neighborNodeId = it.nextLong()) != -1; ) {
-                SwhType neighborType = graph.getNodeType(neighborNodeId);
+                SwhType neighborType = graphCopy.getNodeType(neighborNodeId);
                 //Each revision point to the directory tree and an ordered list of all its parent ...
                 //Let's check if it is a CNT or DIR node
                 if (neighborType == SwhType.CNT || neighborType == SwhType.DIR) {
@@ -57,13 +82,18 @@ public class FileFinder extends GraphExplorer {
                         //Let's check if it's an interesting node ...
                         if (neighborType == SwhType.CNT && labelsContainsTargetedFileName) {
                             logger.info("It's a match, finding file node having requested filename " + neighborNode.getId());
-                            matchingFileNode.add(neighborNode);
+                            res.add(neighborNode);
+
                         }
                     }
                 }
             }
         }
-        logger.info("Number of file node matching name found : " + matchingFileNode.size());
+        if (res.size() > 0) {
+            synchronized (results) {
+                this.results.add(new Result(originNode.getNodeId(), originNode.getOriginUrl(), res));
+            }
+        }
     }
 
     private String getFileName(DirEntry labelId) {
@@ -74,20 +104,27 @@ public class FileFinder extends GraphExplorer {
     void run() throws InterruptedException, IOException {
         try {
             this.loadGraph();
-            this.findTargetedNode(45676258);
+            logger.info("Loading origins");
+            Type listType = new TypeToken<ArrayList<Origin>>() {
+            }.getType();
+            this.origins = this.loadFile("originsFiltered.json", listType);
+            this.exploreGraphNode(this.origins.size());
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Error", e);
         }
     }
 
-    public static class DFSNode {
-        Path path;
-        long id;
+
+    public class DFSNode {
+        private String path;
+        private long id;
+        private String swhid;
 
         public DFSNode(long id) {
-            this.path = Paths.get("/");
+            this.path = "/";
             this.id = id;
+            this.swhid = "";
         }
 
         @Override
@@ -113,18 +150,67 @@ public class FileFinder extends GraphExplorer {
             this.id = id;
         }
 
-        public void addChild(String childName) {
-            this.path = path.resolve(childName);
-        }
 
         public DFSNode createChild(long id, String nodeName) {
             DFSNode res = new DFSNode(id);
-            res.path = this.path.resolve(nodeName);
+            res.path = this.path;
+            if (!nodeName.equals(""))
+                res.path = res.path + nodeName + "/";
             return res;
         }
 
-        public Path getPath() {
-            return path;
+        public String getPath() {
+            return path.toString();
+        }
+
+        public void loadSwhid() {
+            this.swhid = graph.getSWHID(this.getId()).toString();
+        }
+
+        public String getSwhid() {
+            return swhid;
+        }
+
+    }
+
+    public class Result {
+        private long originId;
+        private String originUrl;
+        private List<DFSNode> fileNodes;
+
+        public Result(long originId, String originUrl, List<DFSNode> fileNodes) {
+            this.originId = originId;
+            this.originUrl = originUrl;
+            this.fileNodes = fileNodes;
+            for (DFSNode node : fileNodes) {
+                node.loadSwhid();
+            }
+        }
+
+        public long getOriginId() {
+            return originId;
+        }
+
+        public void setOriginId(long originId) {
+            this.originId = originId;
+        }
+
+        public String getOriginUrl() {
+            return originUrl;
+        }
+
+        public void setOriginUrl(String originUrl) {
+            this.originUrl = originUrl;
+        }
+
+        public List<DFSNode> getFileNodes() {
+            return fileNodes;
+        }
+
+        public void setFileNodes(List<DFSNode> fileNodes) {
+            this.fileNodes = fileNodes;
         }
     }
+
+
 }

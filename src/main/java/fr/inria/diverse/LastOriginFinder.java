@@ -30,7 +30,13 @@ public class LastOriginFinder extends GraphExplorer {
         logger.debug("Elapsed Time: " + Duration.between(inst1, inst2).toSeconds());
     }
 
-    void findLastSnap(Origin originNode, SwhUnidirectionalGraph graphCopy) {
+    /**
+     * Get the last snapshot for a given origin, the result is saved in the snaphsot attribute of the origin passed in parameter
+     *
+     * @param originNode the origin node we want to process
+     * @param graphCopy  the current graphCopy (thread safe approach)
+     */
+    private void findLastSnap(Origin originNode, SwhUnidirectionalGraph graphCopy) {
         Queue<Long> queue = new ArrayDeque<>();
         HashSet<Long> visited = new HashSet<Long>();
         queue.add(originNode.getNodeId());
@@ -87,53 +93,10 @@ public class LastOriginFinder extends GraphExplorer {
                 }
             }
         }
-
-    }
-
-    /**
-     * Not relevant, as each revision points to its parents...
-     * Maybe browse the transposed graph? But I'm not even sure it's useful.
-     * So let's drop it
-     *
-     * @param snapshot
-     * @param graphCopy
-     */
-    public void findLastRevision(Snapshot snapshot, SwhUnidirectionalGraph graphCopy) {
-        Queue<Long> queue = new ArrayDeque<>();
-        HashSet<Long> visited = new HashSet<Long>();
-        queue.add(snapshot.getRev().getNodeId());
-        visited.add(snapshot.getRev().getNodeId());
-
-        while (!queue.isEmpty()) {
-            long currentNodeId = queue.poll();
-            SwhType currentNodeType = graphCopy.getNodeType(currentNodeId);
-            if (currentNodeType == SwhType.REV) {
-
-                Long currentTimestamp = graphCopy.getCommitterTimestamp(currentNodeId);
-                if (currentTimestamp != null) {
-                    Revision currentRev = new Revision(currentNodeId, currentTimestamp);
-                    if (currentRev.compareTo(snapshot.getRev()) > 1) {
-                        logger.info("Updating snapshot rev from " + snapshot.getRev()
-                                .getCommitTimestamp() + " to " + currentRev.getCommitTimestamp());
-                        snapshot.setRev(currentRev);
-                    }
-                } else {
-                    logger.warn("Something went wrong, the timestamp of node " + currentNodeId + " is null");
-                }
-            }
-
-            ArcLabelledNodeIterator.LabelledArcIterator it = graphCopy.labelledSuccessors(currentNodeId);
-            for (long neighborNodeId; (neighborNodeId = it.nextLong()) != -1; ) {
-                if (graphCopy.getNodeType(neighborNodeId) == SwhType.REV && !visited.contains(neighborNodeId)) {
-                    queue.add(neighborNodeId);
-                    visited.add(neighborNodeId);
-                }
-            }
-        }
     }
 
     @Override
-    void nodeListParrallelTraversalAction(long currentNodeId, SwhUnidirectionalGraph graphCopy) {
+    void exploreGraphNodeAction(long currentNodeId, SwhUnidirectionalGraph graphCopy) {
         if (graphCopy.getNodeType(currentNodeId) == SwhType.ORI) {
             String originUrl = graphCopy.getUrl(currentNodeId);
             originUrl = originUrl != null ? originUrl : "";
@@ -143,8 +106,6 @@ public class LastOriginFinder extends GraphExplorer {
                 Origin currentOrigin = new Origin(originUrl, currentNodeId);
                 findLastSnap(currentOrigin, graphCopy);
                 if (currentOrigin.getSnapshot() != null)
-                    //Not relevant .. see function comment ...
-                    // findLastRevision(currentOrigin.getSnapshot(), graphCopy);
                     synchronized (origins) {
                         origins.add(currentOrigin);
                     }
@@ -153,24 +114,26 @@ public class LastOriginFinder extends GraphExplorer {
     }
 
     @Override
-    void nodeListParrallelCheckpointAction() {
+    void exploreGraphNodeCheckpointAction() {
         synchronized (origins) {
             this.exportFile(origins, "origins.json");
         }
     }
 
-    void nodeListEndCheckpointAction() {
+    @Override
+    public void exploreGraphNode(long size) throws InterruptedException {
+        super.exploreGraphNode(size);
+        //Add final save
         this.exportFile(origins, "origins.json");
         this.exportFile(origins.stream().filter(origin -> origin.getSnapshot() != null)
                 .collect(Collectors.toList()), "originsFiltered.json");
     }
 
-
     @Override
     void run() {
         try {
             this.loadGraph();
-            this.nodeListParrallelTraversal();
+            this.exploreGraphNode(graph.numNodes());
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Error", e);

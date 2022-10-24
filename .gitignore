@@ -8,3 +8,4 @@ dependency-reduced-pom.xml
 /.idea/
 /origins.json
 /originsFiltered.json
+/finalResult.json
