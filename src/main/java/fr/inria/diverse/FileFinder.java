@@ -9,8 +9,6 @@ import org.softwareheritage.graph.labels.DirEntry;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.*;
 
 public class FileFinder extends GraphExplorer {
@@ -18,13 +16,10 @@ public class FileFinder extends GraphExplorer {
     List<Result> results = new ArrayList<>();
     ArrayList<Origin> origins;
 
-    public static void main(String[] args) throws InterruptedException, IOException {
-        Instant inst1 = Instant.now();
-        GraphExplorer fileFinder = new FileFinder();
-        fileFinder.run();
-        Instant inst2 = Instant.now();
-        logger.debug("Elapsed Time: " + Duration.between(inst1, inst2).toSeconds());
+    public FileFinder(Graph graph) {
+        super(graph);
     }
+
 
     @Override
     void exploreGraphNodeAction(long currentNodeId, SwhUnidirectionalGraph graphCopy) {
@@ -81,7 +76,7 @@ public class FileFinder extends GraphExplorer {
                         visited.add(neighborNodeId);
                         //Let's check if it's an interesting node ...
                         if (neighborType == SwhType.CNT && labelsContainsTargetedFileName) {
-                            logger.info("It's a match, finding file node having requested filename " + neighborNode.getId());
+                            logger.debug("It's a match, finding file node having requested filename " + neighborNode.getId());
                             res.add(neighborNode);
 
                         }
@@ -97,13 +92,12 @@ public class FileFinder extends GraphExplorer {
     }
 
     private String getFileName(DirEntry labelId) {
-        return new String(graph.getLabelName(labelId.filenameId));
+        return new String(graph.getGraph().getLabelName(labelId.filenameId));
     }
 
     @Override
     void run() throws InterruptedException, IOException {
         try {
-            this.loadGraph();
             logger.info("Loading origins");
             Type listType = new TypeToken<ArrayList<Origin>>() {
             }.getType();
@@ -114,7 +108,6 @@ public class FileFinder extends GraphExplorer {
             throw new RuntimeException("Error", e);
         }
     }
-
 
     public class DFSNode {
         private String path;
@@ -164,7 +157,7 @@ public class FileFinder extends GraphExplorer {
         }
 
         public void loadSwhid() {
-            this.swhid = graph.getSWHID(this.getId()).toString();
+            this.swhid = graph.getGraph().getSWHID(this.getId()).toString();
         }
 
         public String getSwhid() {

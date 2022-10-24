@@ -9,25 +9,14 @@ import org.softwareheritage.graph.SwhType;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 import org.softwareheritage.graph.labels.DirEntry;
 
-import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class LastOriginFinder extends GraphExplorer {
     List<Origin> origins = new LinkedList<>();
 
-    public LastOriginFinder() {
-        super();
-    }
-
-    public static void main(String[] args) throws InterruptedException, IOException {
-        Instant inst1 = Instant.now();
-        GraphExplorer lastOriginFinder = new LastOriginFinder();
-        lastOriginFinder.run();
-        Instant inst2 = Instant.now();
-        logger.debug("Elapsed Time: " + Duration.between(inst1, inst2).toSeconds());
+    public LastOriginFinder(Graph graph) {
+        super(graph);
     }
 
     /**
@@ -132,8 +121,7 @@ public class LastOriginFinder extends GraphExplorer {
     @Override
     void run() {
         try {
-            this.loadGraph();
-            this.exploreGraphNode(graph.numNodes());
+            this.exploreGraphNode(graph.getGraph().numNodes());
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Error", e);

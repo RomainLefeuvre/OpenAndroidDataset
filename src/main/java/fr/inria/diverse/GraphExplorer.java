@@ -19,25 +19,12 @@ public abstract class GraphExplorer {
     static Logger logger = LogManager.getLogger(GraphExplorer.class);
     //The results map <ID,origin>
     protected Configuration config = Configuration.getInstance();
-    protected SwhUnidirectionalGraph graph;
+    protected Graph graph;
 
-    /**
-     * Load the transposed Graph
-     */
-    public void loadGraph() throws IOException {
-        logger.info("Loading graph " + (this.isMappedMemoryActivated() ? "MAPPED MODE" : ""));
-        graph = this.isMappedMemoryActivated() ?
-                SwhUnidirectionalGraph.loadLabelledMapped(this.config.getGraphPath()) :
-                SwhUnidirectionalGraph.loadLabelled(this.config.getGraphPath());
-        graph.loadCommitterTimestamps();
-        logger.info("Graph loaded");
-        logger.info("Loading message");
-        graph.properties.loadMessages();
-        logger.info("Message loaded");
-        logger.info("Loading label");
-        graph.properties.loadLabelNames();
-        logger.info("Label loaded");
+    public GraphExplorer(Graph graph) {
+        this.graph = graph;
     }
+
 
     /**
      * Iterate over the graph list of nodes in a parallel way
@@ -49,7 +36,7 @@ public abstract class GraphExplorer {
         logger.debug("Num of nodes: " + size);
         for (int thread = 0; thread < this.config.getThreadNumber(); thread++) {
             long finalThread = thread;
-            SwhUnidirectionalGraph graphCopy = graph.copy();
+            SwhUnidirectionalGraph graphCopy = graph.getGraph().copy();
             executor.execute(() -> {
                 for (long currentNodeId = finalThread; currentNodeId < size; currentNodeId = currentNodeId + this.config.getThreadNumber()) {
                     if ((currentNodeId - finalThread) % 1000000 == 0) {
@@ -111,9 +98,6 @@ public abstract class GraphExplorer {
         }
     }
 
-    private boolean isMappedMemoryActivated() {
-        return this.config.getLoadingMode().equals("MAPPED");
-    }
 
     abstract void run() throws InterruptedException, IOException;
 
