@@ -1,3 +1,5 @@
 threadNumber=1
 graphPath=/home/.../graph-transposed
+exportPath=export/
 targetedFileName=AndroidManifest.xml
+loadingMode=MAPPED

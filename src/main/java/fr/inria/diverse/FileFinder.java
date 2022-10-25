@@ -2,6 +2,8 @@ package fr.inria.diverse;
 
 import com.google.common.reflect.TypeToken;
 import fr.inria.diverse.model.Origin;
+import fr.inria.diverse.tools.Configuration;
+import fr.inria.diverse.tools.ToolBox;
 import it.unimi.dsi.big.webgraph.labelling.ArcLabelledNodeIterator;
 import org.softwareheritage.graph.SwhType;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
@@ -12,8 +14,10 @@ import java.lang.reflect.Type;
 import java.util.*;
 
 public class FileFinder extends GraphExplorer {
+    public static String exportPath = Configuration.getInstance()
+            .getExportPath() + "/FileFinder/result.json";
 
-    List<Result> results = new ArrayList<>();
+    final List<Result> results = new ArrayList<>();
     ArrayList<Origin> origins;
 
     public FileFinder(Graph graph) {
@@ -29,7 +33,7 @@ public class FileFinder extends GraphExplorer {
     @Override
     void exploreGraphNodeCheckpointAction() {
         synchronized (results) {
-            this.exportFile(results, "finalResult.json");
+            ToolBox.exportFile(results, exportPath);
         }
     }
 
@@ -39,7 +43,7 @@ public class FileFinder extends GraphExplorer {
         logger.info("Number of file node matching name found : " + results.size());
 
         //Add final save
-        this.exportFile(results, "finalResult.json");
+        ToolBox.exportFile(results, exportPath);
     }
 
     /**
@@ -65,11 +69,10 @@ public class FileFinder extends GraphExplorer {
                     //Labels is a list since in the same folder you can have files with different names but with the same content.
                     final DirEntry[] labels = (DirEntry[]) it.label().get();
                     boolean labelsContainsTargetedFileName = Arrays.stream(labels)
-                            .filter(label -> getFileName(label).equals(this.config.getTargetedFileName()))
-                            .count() > 0;
+                            .anyMatch(label -> getFileName(label, graphCopy).equals(this.config.getTargetedFileName()));
                     //If labelsContainsTargetedFileName we take the targeted label, else we get the first one, it does not matter in our case;
                     final String label = labelsContainsTargetedFileName ? this.config.getTargetedFileName() :
-                            (labels.length > 0 ? getFileName(labels[0]) : "");
+                            (labels.length > 0 ? getFileName(labels[0], graphCopy) : "");
                     if (!visited.contains(neighborNodeId)) {
                         DFSNode neighborNode = currentNode.createChild(neighborNodeId, label);
                         stack.push(neighborNode);
@@ -91,8 +94,8 @@ public class FileFinder extends GraphExplorer {
         }
     }
 
-    private String getFileName(DirEntry labelId) {
-        return new String(graph.getGraph().getLabelName(labelId.filenameId));
+    private String getFileName(DirEntry labelId, SwhUnidirectionalGraph graphCopy) {
+        return new String(graphCopy.getLabelName(labelId.filenameId));
     }
 
     @Override
@@ -101,7 +104,7 @@ public class FileFinder extends GraphExplorer {
             logger.info("Loading origins");
             Type listType = new TypeToken<ArrayList<Origin>>() {
             }.getType();
-            this.origins = this.loadFile("originsFiltered.json", listType);
+            this.origins = ToolBox.loadFile(LastOriginFinder.exportPath, listType);
             this.exploreGraphNode(this.origins.size());
         } catch (Exception e) {
             e.printStackTrace();
@@ -153,7 +156,7 @@ public class FileFinder extends GraphExplorer {
         }
 
         public String getPath() {
-            return path.toString();
+            return path;
         }
 
         public void loadSwhid() {

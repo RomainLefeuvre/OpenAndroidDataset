@@ -4,6 +4,8 @@ import fr.inria.diverse.model.Branch;
 import fr.inria.diverse.model.Origin;
 import fr.inria.diverse.model.Revision;
 import fr.inria.diverse.model.Snapshot;
+import fr.inria.diverse.tools.Configuration;
+import fr.inria.diverse.tools.ToolBox;
 import it.unimi.dsi.big.webgraph.labelling.ArcLabelledNodeIterator;
 import org.softwareheritage.graph.SwhType;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
@@ -13,7 +15,12 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class LastOriginFinder extends GraphExplorer {
-    List<Origin> origins = new LinkedList<>();
+    public static String rawExportPath = Configuration.getInstance()
+            .getExportPath() + "/LastOriginFinder/origins.json";
+    public static String exportPath = Configuration.getInstance()
+            .getExportPath() + "/LastOriginFinder/originsFiltered.json";
+
+    private final List<Origin> origins = new LinkedList<>();
 
     public LastOriginFinder(Graph graph) {
         super(graph);
@@ -27,7 +34,7 @@ public class LastOriginFinder extends GraphExplorer {
      */
     private void findLastSnap(Origin originNode, SwhUnidirectionalGraph graphCopy) {
         Queue<Long> queue = new ArrayDeque<>();
-        HashSet<Long> visited = new HashSet<Long>();
+        HashSet<Long> visited = new HashSet<>();
         queue.add(originNode.getNodeId());
         visited.add(originNode.getNodeId());
 
@@ -89,7 +96,7 @@ public class LastOriginFinder extends GraphExplorer {
         if (graphCopy.getNodeType(currentNodeId) == SwhType.ORI) {
             String originUrl = graphCopy.getUrl(currentNodeId);
             originUrl = originUrl != null ? originUrl : "";
-            if (originUrl == "") {
+            if (originUrl.equals("")) {
                 logger.warn("Skipping origin node " + currentNodeId + " because its url is empty");
             } else {
                 Origin currentOrigin = new Origin(originUrl, currentNodeId);
@@ -105,7 +112,7 @@ public class LastOriginFinder extends GraphExplorer {
     @Override
     void exploreGraphNodeCheckpointAction() {
         synchronized (origins) {
-            this.exportFile(origins, "origins.json");
+            ToolBox.exportFile(origins, exportPath);
         }
     }
 
@@ -113,9 +120,9 @@ public class LastOriginFinder extends GraphExplorer {
     public void exploreGraphNode(long size) throws InterruptedException {
         super.exploreGraphNode(size);
         //Add final save
-        this.exportFile(origins, "origins.json");
-        this.exportFile(origins.stream().filter(origin -> origin.getSnapshot() != null)
-                .collect(Collectors.toList()), "originsFiltered.json");
+        ToolBox.exportFile(origins, rawExportPath);
+        ToolBox.exportFile(origins.stream().filter(origin -> origin.getSnapshot() != null)
+                .collect(Collectors.toList()), exportPath);
     }
 
     @Override

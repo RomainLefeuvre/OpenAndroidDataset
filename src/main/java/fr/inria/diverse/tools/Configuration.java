@@ -18,11 +18,12 @@ public class Configuration {
     private static Configuration instance = null;
 
     //Config Attributes
-    private int threadNumber;
-    private String graphPath;
-    private String targetedFileName;
-    private String loadingMode;
-    private String swhToken;
+    private final int threadNumber;
+    private final String graphPath;
+    private final String targetedFileName;
+    private final String loadingMode;
+    private final String swhToken;
+    private final String exportPath;
 
     private Configuration() {
         Properties props = new Properties();
@@ -39,7 +40,7 @@ public class Configuration {
         this.targetedFileName = props.getProperty("targetedFileName");
         this.loadingMode = props.getProperty("loadingMode");
         this.swhToken = props.getProperty("swhToken");
-
+        this.exportPath = props.getProperty("exportPath");
     }
 
     public static Configuration getInstance() {
@@ -70,5 +71,8 @@ public class Configuration {
         return swhToken;
     }
 
+    public String getExportPath() {
+        return exportPath;
+    }
 
 }

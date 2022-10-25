@@ -1,18 +1,12 @@
 package fr.inria.diverse;
 
-import com.google.gson.Gson;
 import fr.inria.diverse.tools.Configuration;
 import fr.inria.diverse.tools.Executor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Reader;
-import java.lang.reflect.Type;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 
 public abstract class GraphExplorer {
@@ -24,7 +18,6 @@ public abstract class GraphExplorer {
     public GraphExplorer(Graph graph) {
         this.graph = graph;
     }
-
 
     /**
      * Iterate over the graph list of nodes in a parallel way
@@ -69,35 +62,6 @@ public abstract class GraphExplorer {
      */
     void exploreGraphNodeCheckpointAction() {
     }
-
-
-    /**
-     * Export an object of Type T to a json file named filename+".json"
-     *
-     * @param objectToSave the object you want to save
-     * @param filename     its filename
-     * @param <T>          the type of objectToSave
-     */
-    public <T> void exportFile(T objectToSave, String filename) {
-        try (FileWriter f = new FileWriter(filename)
-        ) {
-            Gson gson = new Gson();
-            gson.toJson(objectToSave, f);
-        } catch (IOException e) {
-            throw new RuntimeException("Error while saving", e);
-        }
-    }
-
-    public <T> T loadFile(String fileName, Type type) {
-        Gson gson = new Gson();
-        try (Reader reader = Files.newBufferedReader(Paths.get(fileName))) {
-            return gson.fromJson(reader, type);
-
-        } catch (IOException e) {
-            throw new RuntimeException("Error while saving", e);
-        }
-    }
-
 
     abstract void run() throws InterruptedException, IOException;
 

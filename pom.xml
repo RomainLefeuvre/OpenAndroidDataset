@@ -124,7 +124,7 @@
                             <transformers>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>fr.inria.diverse.GraphExplorer</mainClass>
+                                    <mainClass>fr.inria.diverse.Main</mainClass>
                                 </transformer>
                             </transformers>
                             <filters>
