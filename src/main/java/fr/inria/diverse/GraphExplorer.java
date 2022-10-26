@@ -11,7 +11,6 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class GraphExplorer {
     static Logger logger = LogManager.getLogger(GraphExplorer.class);
-    //The results map <ID,origin>
     protected Configuration config = Configuration.getInstance();
     protected Graph graph;
 

@@ -6,6 +6,7 @@ import fr.inria.diverse.model.Revision;
 import fr.inria.diverse.model.Snapshot;
 import fr.inria.diverse.tools.Configuration;
 import fr.inria.diverse.tools.ToolBox;
+import it.unimi.dsi.big.webgraph.LazyLongIterator;
 import it.unimi.dsi.big.webgraph.labelling.ArcLabelledNodeIterator;
 import org.softwareheritage.graph.SwhType;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
@@ -53,8 +54,8 @@ public class LastOriginFinder extends GraphExplorer {
                             revNode = neighborNodeId;
                         } else {
                             //We probably find a release node, lets get a rev node!
-                            ArcLabelledNodeIterator.LabelledArcIterator childIt = graphCopy.copy()
-                                    .labelledSuccessors(neighborNodeId);
+                            LazyLongIterator childIt = (graphCopy.copy())
+                                    .successors(neighborNodeId);
                             revNode = childIt.nextLong();
                             if (graphCopy.getNodeType(revNode) != SwhType.REV) {
                                 logger.warn("Not a revision as expected " + graphCopy.getNodeType(revNode) +

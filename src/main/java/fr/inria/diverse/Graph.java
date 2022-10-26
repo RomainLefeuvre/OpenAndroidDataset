@@ -6,13 +6,11 @@ import org.apache.logging.log4j.Logger;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 
 import java.io.IOException;
-import java.util.List;
 
 public class Graph {
     static Logger logger = LogManager.getLogger(Graph.class);
     protected SwhUnidirectionalGraph graph;
     protected Configuration config = Configuration.getInstance();
-    List<GraphExplorer> graphExplorerList;
 
     /**
      * Load the transposed Graph
