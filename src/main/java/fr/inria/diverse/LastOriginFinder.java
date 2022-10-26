@@ -8,6 +8,7 @@ import fr.inria.diverse.tools.Configuration;
 import fr.inria.diverse.tools.ToolBox;
 import it.unimi.dsi.big.webgraph.LazyLongIterator;
 import it.unimi.dsi.big.webgraph.labelling.ArcLabelledNodeIterator;
+import it.unimi.dsi.bits.LongArrayBitVector;
 import org.softwareheritage.graph.SwhType;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 import org.softwareheritage.graph.labels.DirEntry;
@@ -41,21 +42,31 @@ public class LastOriginFinder extends GraphExplorer {
 
         while (!queue.isEmpty()) {
             long currentNodeId = queue.poll();
-            ArcLabelledNodeIterator.LabelledArcIterator it = graphCopy.labelledSuccessors(currentNodeId);
-            for (long neighborNodeId; (neighborNodeId = it.nextLong()) != -1; ) {
-                if (graphCopy.getNodeType(currentNodeId) == SwhType.SNP) {
+            if (!((currentNodeId + Long.SIZE - 1) >>> LongArrayBitVector.LOG2_BITS_PER_WORD <= Integer.MAX_VALUE)) {
+                logger.error("Will crash : " + currentNodeId);
+            } else {
 
-                    final DirEntry[] labels = (DirEntry[]) it.label().get();
-                    for (DirEntry label : labels) {
-
+                ArcLabelledNodeIterator.LabelledArcIterator it = graphCopy.labelledSuccessors(currentNodeId);
+                for (long neighborNodeId; (neighborNodeId = it.nextLong()) != -1; ) {
+                    if (graphCopy.getNodeType(currentNodeId) == SwhType.SNP) {
+                        final DirEntry[] labels = (DirEntry[]) it.label().get();
+                        assert (labels.length == 0);
+                        DirEntry label = labels[0];
+                        
                         //Getting the first revision node
                         final Long revNode;
                         if (graphCopy.getNodeType(neighborNodeId) == SwhType.REV) {
                             revNode = neighborNodeId;
                         } else {
                             //We probably find a release node, lets get a rev node!
+                            if (!((neighborNodeId + Long.SIZE - 1) >>> LongArrayBitVector.LOG2_BITS_PER_WORD <= Integer.MAX_VALUE)) {
+                                logger.error("Will crash : " + neighborNodeId);
+                            }
+
                             LazyLongIterator childIt = (graphCopy.copy())
                                     .successors(neighborNodeId);
+
+
                             revNode = childIt.nextLong();
                             if (graphCopy.getNodeType(revNode) != SwhType.REV) {
                                 logger.warn("Not a revision as expected " + graphCopy.getNodeType(revNode) +
@@ -81,15 +92,19 @@ public class LastOriginFinder extends GraphExplorer {
                         } else {
                             logger.debug("Not a valid branch name " + branchName);
                         }
+
+
+                    } else {
+                        if (!visited.contains(neighborNodeId)) {
+                            queue.add(neighborNodeId);
+                            visited.add(neighborNodeId);
+                        }
                     }
-                } else {
-                    if (!visited.contains(neighborNodeId)) {
-                        queue.add(neighborNodeId);
-                        visited.add(neighborNodeId);
-                    }
+
                 }
             }
         }
+
     }
 
     @Override
