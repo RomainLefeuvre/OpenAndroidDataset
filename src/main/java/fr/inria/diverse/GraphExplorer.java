@@ -34,7 +34,12 @@ public abstract class GraphExplorer {
                     if ((currentNodeId - finalThread) % 1000000 == 0) {
                         logger.info("Node " + currentNodeId + " over " + size + " thread " + finalThread);
                     }
-                    this.exploreGraphNodeAction(currentNodeId, graphCopy);
+                    try {
+                        this.exploreGraphNodeAction(currentNodeId, graphCopy);
+                    } catch (Exception e) {
+                        logger.error("Error catch for node " + currentNodeId, e);
+                    }
+
                 }
             });
         }

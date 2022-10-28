@@ -8,7 +8,6 @@ import fr.inria.diverse.tools.Configuration;
 import fr.inria.diverse.tools.ToolBox;
 import it.unimi.dsi.big.webgraph.LazyLongIterator;
 import it.unimi.dsi.big.webgraph.labelling.ArcLabelledNodeIterator;
-import it.unimi.dsi.bits.LongArrayBitVector;
 import org.softwareheritage.graph.SwhType;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 import org.softwareheritage.graph.labels.DirEntry;
@@ -42,66 +41,58 @@ public class LastOriginFinder extends GraphExplorer {
 
         while (!queue.isEmpty()) {
             long currentNodeId = queue.poll();
-            if (!((currentNodeId + Long.SIZE - 1) >>> LongArrayBitVector.LOG2_BITS_PER_WORD <= Integer.MAX_VALUE)) {
-                logger.error("Will crash : " + currentNodeId);
-            } else {
 
-                ArcLabelledNodeIterator.LabelledArcIterator it = graphCopy.labelledSuccessors(currentNodeId);
-                for (long neighborNodeId; (neighborNodeId = it.nextLong()) != -1; ) {
-                    if (graphCopy.getNodeType(currentNodeId) == SwhType.SNP) {
-                        final DirEntry[] labels = (DirEntry[]) it.label().get();
-                        assert (labels.length == 0);
-                        DirEntry label = labels[0];
-                        
-                        //Getting the first revision node
-                        final Long revNode;
-                        if (graphCopy.getNodeType(neighborNodeId) == SwhType.REV) {
-                            revNode = neighborNodeId;
-                        } else {
-                            //We probably find a release node, lets get a rev node!
-                            if (!((neighborNodeId + Long.SIZE - 1) >>> LongArrayBitVector.LOG2_BITS_PER_WORD <= Integer.MAX_VALUE)) {
-                                logger.error("Will crash : " + neighborNodeId);
-                            }
+            ArcLabelledNodeIterator.LabelledArcIterator it = graphCopy.labelledSuccessors(currentNodeId);
+            for (long neighborNodeId; (neighborNodeId = it.nextLong()) != -1; ) {
+                if (graphCopy.getNodeType(currentNodeId) == SwhType.SNP) {
+                    final DirEntry[] labels = (DirEntry[]) it.label().get();
+                    DirEntry label = labels[0];
 
-                            LazyLongIterator childIt = (graphCopy.copy())
-                                    .successors(neighborNodeId);
-
-
-                            revNode = childIt.nextLong();
-                            if (graphCopy.getNodeType(revNode) != SwhType.REV) {
-                                logger.warn("Not a revision as expected " + graphCopy.getNodeType(revNode) +
-                                        " instead for current node " + currentNodeId);
-                            }
-                            if (childIt.nextLong() != -1) {
-                                logger.warn("Iterator not ended as expected at current node " + currentNodeId);
-                            }
-                        }
-
-                        String url = new String(graphCopy.getLabelName(label.filenameId));
-                        String branchName = url.replace("refs/heads/", "");
-                        if (Branch.BranchType.isABranchType(branchName)) {
-                            logger.debug("Branch Name " + branchName);
-                            Long currentTimestamp = graphCopy.getCommitterTimestamp(revNode);
-                            if (currentTimestamp != null) {
-                                Revision currentRevision = new Revision(revNode, currentTimestamp);
-                                Snapshot currentSnap = new Snapshot(branchName, currentNodeId, currentRevision);
-                                originNode.checkSnapshotAndUpdate(currentSnap);
-                            } else {
-                                logger.debug("Impossible to get current revision timestamp for revision " + currentNodeId);
-                            }
-                        } else {
-                            logger.debug("Not a valid branch name " + branchName);
-                        }
-
-
+                    //Getting the first revision node
+                    final Long revNode;
+                    if (graphCopy.getNodeType(neighborNodeId) == SwhType.REV) {
+                        revNode = neighborNodeId;
                     } else {
-                        if (!visited.contains(neighborNodeId)) {
-                            queue.add(neighborNodeId);
-                            visited.add(neighborNodeId);
+                        //We probably find a release node, lets get a rev node!
+                        LazyLongIterator childIt = (graphCopy.copy())
+                                .successors(neighborNodeId);
+
+
+                        revNode = childIt.nextLong();
+                        if (graphCopy.getNodeType(revNode) != SwhType.REV) {
+                            logger.warn("Not a revision as expected " + graphCopy.getNodeType(revNode) +
+                                    " instead for current node " + currentNodeId);
+                        }
+                        if (childIt.nextLong() != -1) {
+                            logger.warn("Iterator not ended as expected at current node " + currentNodeId);
                         }
                     }
 
+                    String url = new String(graphCopy.getLabelName(label.filenameId));
+                    String branchName = url.replace("refs/heads/", "");
+                    if (Branch.BranchType.isABranchType(branchName)) {
+                        logger.debug("Branch Name " + branchName);
+                        Long currentTimestamp = graphCopy.getCommitterTimestamp(revNode);
+                        if (currentTimestamp != null) {
+                            Revision currentRevision = new Revision(revNode, currentTimestamp);
+                            Snapshot currentSnap = new Snapshot(branchName, currentNodeId, currentRevision);
+                            originNode.checkSnapshotAndUpdate(currentSnap);
+                        } else {
+                            logger.debug("Impossible to get current revision timestamp for revision " + currentNodeId);
+                        }
+                    } else {
+                        logger.debug("Not a valid branch name " + branchName);
+                    }
+
+
+                } else {
+                    if (!visited.contains(neighborNodeId)) {
+                        queue.add(neighborNodeId);
+                        visited.add(neighborNodeId);
+                    }
                 }
+
+
             }
         }
 
