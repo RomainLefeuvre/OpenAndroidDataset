@@ -13,7 +13,9 @@ public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
         Graph g = new Graph();
         g.loadGraph();
+
         logger.info("-----------LastOriginFinder Finder stage-----------");
+
 
         Instant inst1 = Instant.now();
 

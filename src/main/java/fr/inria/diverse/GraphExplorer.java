@@ -36,7 +36,7 @@ public abstract class GraphExplorer {
                     }
                     try {
                         this.exploreGraphNodeAction(currentNodeId, graphCopy);
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
                         logger.error("Error catch for node " + currentNodeId, e);
                     }
 
