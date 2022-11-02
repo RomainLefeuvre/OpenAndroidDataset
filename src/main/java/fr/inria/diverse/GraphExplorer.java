@@ -25,7 +25,7 @@ public abstract class GraphExplorer {
      */
     public void exploreGraphNode(long size) throws InterruptedException {
         Executor executor = new Executor(this.config.getThreadNumber());
-        logger.debug("Num of nodes: " + size);
+        logger.info("Num of nodes: " + size);
         for (int thread = 0; thread < this.config.getThreadNumber(); thread++) {
             long finalThread = thread;
             SwhUnidirectionalGraph graphCopy = graph.getGraph().copy();
@@ -67,6 +67,13 @@ public abstract class GraphExplorer {
     void exploreGraphNodeCheckpointAction() {
     }
 
-    abstract void run() throws InterruptedException, IOException;
+    void run() throws InterruptedException, IOException {
+        try {
+            this.exploreGraphNode(graph.getGraph().numNodes());
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error", e);
+        }
+    }
 
 }

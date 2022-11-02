@@ -15,18 +15,5 @@ public class DebugExplorer extends GraphExplorer {
         ArcLabelledNodeIterator.LabelledArcIterator it = graphCopy.labelledSuccessors(currentNodeId);
     }
 
-    @Override
-    void exploreGraphNodeCheckpointAction() {
-
-    }
-
-    @Override
-    public void exploreGraphNode(long size) throws InterruptedException {
-
-    }
-
-    @Override
-    void run() {
-    }
 
 }
