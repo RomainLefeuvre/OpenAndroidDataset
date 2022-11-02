@@ -4,8 +4,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
 
 public class Main {
     static Logger logger = LogManager.getLogger(Main.class);
@@ -13,8 +11,9 @@ public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
         Graph g = new Graph();
         g.loadGraph();
-
-        logger.info("-----------LastOriginFinder Finder stage-----------");
+        GraphExplorer debugExplorer = new DebugExplorer(g);
+        debugExplorer.run();
+        /*logger.info("-----------LastOriginFinder Finder stage-----------");
 
 
         Instant inst1 = Instant.now();
@@ -30,6 +29,6 @@ public class Main {
         fileFinder.run();
         inst1 = Instant.now();
         logger.debug("Elapsed Time: " + Duration.between(inst2, inst1).toSeconds());
-
+*/
     }
 }
