@@ -1,5 +1,6 @@
 package fr.inria.diverse;
 
+import fr.inria.diverse.tools.Configuration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -11,6 +12,11 @@ public class Main {
     static Logger logger = LogManager.getLogger(Main.class);
 
     public static void main(String[] args) throws IOException, InterruptedException {
+        if (args.length > 0) {
+            Configuration.init(args[0]);
+        } else {
+            Configuration.init();
+        }
         Graph g = new Graph();
         g.loadGraph();
         /*GraphExplorer debugExplorer = new DebugExplorer(g);
