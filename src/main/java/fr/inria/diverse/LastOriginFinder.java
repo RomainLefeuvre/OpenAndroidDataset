@@ -107,7 +107,7 @@ public class LastOriginFinder extends GraphExplorer {
                 logger.warn("Skipping origin node " + currentNodeId + " because its url is empty");
             } else {
                 Origin currentOrigin = new Origin(originUrl, currentNodeId);
-                findLastSnap(currentOrigin, graphCopy);
+                findLastSnap(currentOrigin, graphCopy.copy());
                 if (currentOrigin.getSnapshot() != null)
                     synchronized (origins) {
                         origins.add(currentOrigin);
