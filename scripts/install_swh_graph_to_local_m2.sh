@@ -1,6 +1,6 @@
 #!/bin/bash
 git clone https://github.com/RomainLefeuvre/swh-graph
 cd swh-graph/java/
-mvn clean install
+mvn clean install --no-transfer-progress
 cd ../../
 rm -r -f ./swh-graph/
