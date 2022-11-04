@@ -25,7 +25,7 @@ jobs:
           distribution: 'temurin'
           cache: maven
       - name: Install dependencies
-        run:
+        run: |
         cd scripts
         sh scripts/dl_script.sh
       - name: Build with Maven
