@@ -1,21 +1,21 @@
-graph.graph                                                                                                                               │[WARNING]   - META-INF/maven/com.sun.jersey/jersey-core/pom.xml
-graph-labelled.labeloffsets                                                                                                               │[WARNING] commons-collections-3.2.2.jar, hadoop-client-runtime-3.3.1.jar define 2 overlapping resources:
-graph-labelled.labels                                                                                                                     │[WARNING]   - META-INF/maven/commons-collections/commons-collections/pom.properties
-graph-labelled.properties                                                                                                                 │[WARNING]   - META-INF/maven/commons-collections/commons-collections/pom.xml
-graph.labels.count.txt                                                                                                                    │[WARNING] activation-1.1.jar, jakarta.activation-api-2.1.0.jar define 2 overlapping resources:
-graph.labels.csv.zst                                                                                                                      │[WARNING]   - META-INF/mailcap.default
-graph.labels.fcl.bytearray                                                                                                                │[WARNING]   - META-INF/mimetypes.default
-graph.labels.fcl.pointers                                                                                                                 │[WARNING] commons-text-1.9.jar, hadoop-client-runtime-3.3.1.jar define 2 overlapping resources:
-graph.labels.fcl.properties                                                                                                               │[WARNING]   - META-INF/maven/org.apache.commons/commons-text/pom.properties
-graph.labels.mph                                                                                                                          │[WARNING]   - META-INF/maven/org.apache.commons/commons-text/pom.xml
-graph.mph                                                                                                                                 │[WARNING] hadoop-client-runtime-3.3.1.jar, woodstox-core-5.3.0.jar define 5 overlapping resources:
-graph.node2swhid.bin                                                                                                                      │[WARNING]   - META-INF/maven/com.fasterxml.woodstox/woodstox-core/pom.properties
-graph.node2type.map                                                                                                                       │[WARNING]   - META-INF/maven/com.fasterxml.woodstox/woodstox-core/pom.xml
-graph.offsets                                                                                                                             │[WARNING]   - META-INF/services/javax.xml.stream.XMLEventFactory
-graph.order                                                                                                                               │[WARNING]   - META-INF/services/javax.xml.stream.XMLInputFactory
-graph.properties                                                                                                                          │[WARNING]   - META-INF/services/javax.xml.stream.XMLOutputFactory
-graph.property.committer_id.bin                                                                                                           │[WARNING] hadoop-client-runtime-3.3.1.jar, kerb-admin-1.0.1.jar define 2 overlapping resources:
-graph.property.committer_timestamp.bin                                                                                                    │[WARNING]   - META-INF/maven/org.apache.kerby/kerb-admin/pom.properties
-graph.property.committer_timestamp_offset.bin                                                                                             │[WARNING]   - META-INF/maven/org.apache.kerby/kerb-admin/pom.xml
-graph.property.message.bin                                                                                                                │[WARNING] hadoop-client-runtime-3.3.1.jar, jetty-webapp-9.4.40.v20210413.jar define 2 overlapping resources:
+graph.graph
+graph-labelled.labeloffsets
+graph-labelled.labels
+graph-labelled.properties
+graph.labels.count.txt
+graph.labels.csv.zst
+graph.labels.fcl.bytearray
+graph.labels.fcl.pointers
+graph.labels.fcl.properties
+graph.labels.mph
+graph.mph
+graph.node2swhid.bin
+graph.node2type.map
+graph.offsets
+graph.order
+graph.properties
+graph.property.committer_id.bin
+graph.property.committer_timestamp.bin
+graph.property.committer_timestamp_offset.bin
+graph.property.message.bin
 graph.property.message.offset.bin
