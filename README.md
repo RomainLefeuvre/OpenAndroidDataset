@@ -75,18 +75,28 @@ ToDo
 
 ### Prerequisites
 
-ToDo
+- JAVA >=11
+- Maven with MAVEN_HOME set
 
 ### Installation
 
-ToDo
-
+- Create a config file based on the template
+- go to scripts folder  
+  `cd scripts`
+- Download the last full graph dataset by running  
+  `sh dl_scripts.sh`
+- Install locally our swh-graph fork by running
+  `sh install_swh_graph_to_local_m2.sh`
+- Package  
+  `cd ..`  
+  `mvn clean package`
 
 <!-- USAGE EXAMPLES -->
 
 ## Usage
 
-ToDo
+`java -ea -server -XX:PretenureSizeThreshold=512M -XX:MaxNewSize=4G -XX:+UseLargePages -XX:+UseTransparentHugePages -XX:+UseNUMA -XX:+UseTLAB -XX:+ResizeTLAB -Djava.io.tmpdir=../java-tmp-dir -Xmx180G -jar ./target/shTest-1.0-SNAPSHOT.jar`
+
 
 
 <!-- ROADMAP -->
