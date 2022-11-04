@@ -27,7 +27,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd scripts
-          sh scripts/dl_script.sh
+          sh dl_script.sh
       - name: Build with Maven
         run: mvn -B package --file pom.xml
 
