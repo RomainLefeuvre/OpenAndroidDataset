@@ -29,7 +29,7 @@ jobs:
           cd scripts
           sh install_swh_graph_to_local_m2.sh
       - name: Build with Maven
-        run: mvn -B package --file pom.xml
+        run: mvn  --no-transfer-progress clean package
 
       # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
       - name: Update dependency graph
