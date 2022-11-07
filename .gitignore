@@ -2,7 +2,11 @@
 /.idea/
 /target/
 res.json
-/src/main/resources/config.properties
+/config/config.properties
 /resWithSwhIds.json
 dependency-reduced-pom.xml
-/.idea/
+/origins.json
+/originsFiltered.json
+/finalResult.json
+/export/
+/dataset/

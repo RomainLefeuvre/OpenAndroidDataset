@@ -67,7 +67,31 @@
 
 ## About The Project
 
-ToDo
+The purpose of this project is to build a dataset of open source Android applications available on the Google Play
+store.
+
+To determine if a repository contains the sources of an android application a possible way is to look for the presence
+of the "AndroidManifest.xml" file.
+
+The github and gitlab api could have been used but this has some disadvantages such as a limitation in terms of api
+usage or the need to adapt to the api of each forge.
+
+Software heritage archives open source projects from many forges such as github, gitlab, bitbucket and offers api's to
+access data and metadata. Using software heritage allows to have the same approach for all forges, the only api to use
+is the software heritage one. If a new forge is added to software heritage, our project will automatically benefit from
+it. Furthermore, it allows our experience to not depend on private forges such as github. In this project we will use
+the [SWH-GRAPH](https://docs.softwareheritage.org/devel/swh-graph/index.html) java api.
+
+SWH-GRAPH provides fast access to the graph representation of the Software Heritage Archive and is based on a compressed
+representation of the SWH Merkle DAG.
+
+## Approach
+
+Our approach is in two parts:
+
+1) Traverse the graph to retrieve all nodes of type origin as well as the most recent commit node of the main branch.
+
+2) For each of these nodes, browse their children to find files named AndroidManfiest.xml
 
 ## Getting Started
 
@@ -75,18 +99,30 @@ ToDo
 
 ### Prerequisites
 
-ToDo
+- JAVA >= 11
+- Maven >= 3.6.3
 
 ### Installation
 
-ToDo
+ToDo : provide a docker containe
 
+- Create a config file based on the template
+- go to scripts folder  
+  `cd scripts`
+- Download the last full graph dataset by running  
+  `sh dl_scripts.sh`
+- Install locally our swh-graph fork by running
+  `sh install_swh_graph_to_local_m2.sh`
+- Package  
+  `cd ..`  
+  `mvn clean package`
 
 <!-- USAGE EXAMPLES -->
 
 ## Usage
 
-ToDo
+`java -ea -server -XX:PretenureSizeThreshold=512M -XX:MaxNewSize=4G -XX:+UseLargePages -XX:+UseTransparentHugePages -XX:+UseNUMA -XX:+UseTLAB -XX:+ResizeTLAB -Djava.io.tmpdir=../java-tmp-dir -Xmx180G -jar ./target/shTest-1.0-SNAPSHOT.jar`
+
 
 
 <!-- ROADMAP -->

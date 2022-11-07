@@ -1,8 +1,9 @@
 package fr.inria.diverse;
 
-import com.google.gson.Gson;
+import com.google.common.reflect.TypeToken;
 import fr.inria.diverse.model.ResolveDto;
 import fr.inria.diverse.restClient.ClientEndpoint;
+import fr.inria.diverse.tools.ToolBox;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -12,42 +13,52 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
-import java.io.*;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 public class AndroidManifestAnalyser {
     static Logger logger = LogManager.getLogger(AndroidManifestAnalyser.class);
+    static String backupUri = "export/swh/files/";
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         //Import result
-        Map<String, String> source = loadResultsMap();
+        List<FileFinder.Result> sources = loadResultsMap();
+        List<Result> results = new LinkedList<>();
 
-        Set<String> uris = source.values().stream().collect(Collectors.toSet());
+        for (FileFinder.Result origin : sources) {
+            logger.debug("Current Origin : " + origin.getOriginUrl());
+            Result result = new Result(origin.getOriginUrl(), origin.getOriginId());
+            for (FileFinder.DFSNode fileNode : origin.getFileNodes()) {
+                String manifest = getAndroidManifest(fileNode.getSwhid());
+                logger.debug("Current manifest : " + manifest);
 
-        Map<String, List<String>> res = new HashMap<>();
+                Path filePath = Paths.get(backupUri, fileNode.getSwhid());
+                Path parentDir = filePath.getParent();
+                if (!Files.exists(parentDir))
+                    Files.createDirectories(parentDir);
+                Files.write(filePath, manifest.getBytes());
 
-        Iterator<Map.Entry<String, String>> it = source.entrySet().iterator();
-        for (int i = 0; i < 1000 && it.hasNext(); i++) {
-            Map.Entry<String, String> entry = it.next();
-            String currentId = entry.getKey();
-            String manifest = getAndroidManifest(currentId);
+               /* String androidManifestPackage = getAndroidManifestPackage(manifest);
+                logger.debug("androidManifestPackage found : " + androidManifestPackage);
 
-            logger.debug("Current manifest : " + manifest);
-            String androidManifestPackage = getAndroidManifestPackage(manifest);
-            logger.debug("androidManifestPackage found : " + androidManifestPackage);
-            logger.debug("========================== \n");
-            if (androidManifestPackage != null && !androidManifestPackage.equals("")) {
-                if (!res.containsKey(entry.getValue())) {
-                    res.put(entry.getValue(), new LinkedList<>());
-                }
-                res.get(entry.getValue()).add(androidManifestPackage);
+                if (androidManifestPackage != null && !androidManifestPackage.equals("")) {
+                    result.addGplayPackage(androidManifestPackage);
+                }*/
+
+            }
+            if (result.gplayPackages.size() > 0) {
+                results.add(result);
             }
 
         }
-        export(res.entrySet().stream().map(entry -> new Result(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList()));
-
+        ToolBox.exportFile(results, "AndroidManifestResults.json");
 
     }
 
@@ -63,8 +74,8 @@ public class AndroidManifestAnalyser {
     }
 
     public static String getAndroidManifestPackage(String androidManifest) {
-        String androidManifestPackage = null;
-        byte[] byteArray = new byte[0];
+        String androidManifestPackage;
+        byte[] byteArray;
         try {
             byteArray = androidManifest.getBytes("UTF-8");
 
@@ -91,40 +102,27 @@ public class AndroidManifestAnalyser {
         return null;
     }
 
-    public static Map<String, String> loadResultsMap() {
-        Gson gson = new Gson();
-        Map<String, String> result = null;
-        try {
-            result = gson.fromJson(new FileReader("resWithSwhIds.json"), Map.class);
 
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException("Error while reading file");
-        }
-        return result;
-    }
-
-    public static void export(List<Result> res) {
-        try (FileWriter f = new FileWriter("final.json")
-        ) {
-            Gson gson = new Gson();
-            gson.toJson(res, f);
-        } catch (IOException e) {
-            throw new RuntimeException("Error while saving", e);
-        }
-
+    public static List<FileFinder.Result> loadResultsMap() {
+        Type listType = new TypeToken<ArrayList<FileFinder.Result>>() {
+        }.getType();
+        return ToolBox.loadFile("finalResult.json", listType);
     }
 
     public static class Result {
         private String uri;
-        private List<String> gplayPackages;
+        private Long originId;
+        private List<String> gplayPackages = new LinkedList<>();
 
-        public Result() {
-            this.gplayPackages = new LinkedList<>();
+        public Result(String uri, Long id, List<String> gplayPackages) {
+            this.uri = uri;
+            this.originId = id;
+            this.gplayPackages = gplayPackages;
         }
 
-        public Result(String uri, List<String> gplayPackages) {
+        public Result(String uri, Long id) {
             this.uri = uri;
-            this.gplayPackages = gplayPackages;
+            this.originId = id;
         }
 
         public String getUri() {
@@ -135,6 +133,14 @@ public class AndroidManifestAnalyser {
             this.uri = uri;
         }
 
+        public Long getOriginId() {
+            return originId;
+        }
+
+        public void setOriginId(Long originId) {
+            this.originId = originId;
+        }
+
         public List<String> getGplayPackages() {
             return gplayPackages;
         }
@@ -142,6 +148,11 @@ public class AndroidManifestAnalyser {
         public void setGplayPackages(List<String> gplayPackages) {
             this.gplayPackages = gplayPackages;
         }
+
+        public void addGplayPackage(String gplayPackage) {
+            this.gplayPackages.add(gplayPackage);
+        }
     }
+
 
 }
