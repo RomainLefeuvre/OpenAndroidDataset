@@ -18,6 +18,7 @@ public abstract class GraphExplorer {
         this.graph = graph;
     }
 
+
     /**
      * Iterate over the graph list of nodes in a parallel way
      *

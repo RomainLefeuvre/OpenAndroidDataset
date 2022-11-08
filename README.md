@@ -104,7 +104,7 @@ ToDo
 
 ### Installation
 
-ToDo : provide a docker containe
+ToDo : provide a docker container
 
 - Create a config file based on the template
 - go to scripts folder  

@@ -8,23 +8,36 @@ import fr.inria.diverse.tools.Configuration;
 import fr.inria.diverse.tools.ToolBox;
 import it.unimi.dsi.big.webgraph.LazyLongIterator;
 import it.unimi.dsi.big.webgraph.labelling.ArcLabelledNodeIterator;
+import it.unimi.dsi.bits.Fast;
 import org.softwareheritage.graph.SwhType;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 import org.softwareheritage.graph.labels.DirEntry;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static it.unimi.dsi.big.webgraph.labelling.BitStreamArcLabelledImmutableGraph.LABELS_EXTENSION;
+
 public class LastOriginFinder extends GraphExplorer {
+
     public static String rawExportPath = Configuration.getInstance()
             .getExportPath() + "/LastOriginFinder/origins.json";
     public static String exportPath = Configuration.getInstance()
             .getExportPath() + "/LastOriginFinder/originsFiltered.json";
-
     private final List<Origin> origins = new LinkedList<>();
+    public long size;
 
-    public LastOriginFinder(Graph graph) {
+    public LastOriginFinder(Graph graph) throws FileNotFoundException {
         super(graph);
+        FileInputStream fis = new FileInputStream(this.config.getGraphPath() + "-labelled" + LABELS_EXTENSION);
+        try {
+            size = fis.getChannel().size();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -39,8 +52,17 @@ public class LastOriginFinder extends GraphExplorer {
         queue.add(originNode.getNodeId());
         visited.add(originNode.getNodeId());
 
+
         while (!queue.isEmpty()) {
             long currentNodeId = queue.poll();
+
+            long l = Fast.mostSignificantBit((size * Byte.SIZE + 1) / (graphCopy.numNodes() + 1));
+            long a = l * currentNodeId;
+            logger.info("For node " + currentNodeId + " a is " + a + " l is " + l);
+            if (a >>> 6 > Integer.MAX_VALUE) {
+
+                logger.error("Will crash node " + currentNodeId);
+            }
 
             ArcLabelledNodeIterator.LabelledArcIterator it = graphCopy.labelledSuccessors(currentNodeId);
             for (long neighborNodeId; (neighborNodeId = it.nextLong()) != -1; ) {
