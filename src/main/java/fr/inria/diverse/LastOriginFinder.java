@@ -8,7 +8,6 @@ import fr.inria.diverse.tools.Configuration;
 import fr.inria.diverse.tools.ToolBox;
 import it.unimi.dsi.big.webgraph.LazyLongIterator;
 import it.unimi.dsi.big.webgraph.labelling.ArcLabelledNodeIterator;
-import it.unimi.dsi.bits.Fast;
 import org.softwareheritage.graph.SwhType;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 import org.softwareheritage.graph.labels.DirEntry;
@@ -55,15 +54,6 @@ public class LastOriginFinder extends GraphExplorer {
 
         while (!queue.isEmpty()) {
             long currentNodeId = queue.poll();
-
-            long l = Fast.mostSignificantBit((size * Byte.SIZE + 1) / (graphCopy.numNodes() + 1));
-            long a = l * currentNodeId;
-            logger.info("For node " + currentNodeId + " a is " + a + " l is " + l);
-            if (a >>> 6 > Integer.MAX_VALUE) {
-
-                logger.error("Will crash node " + currentNodeId);
-            }
-
             ArcLabelledNodeIterator.LabelledArcIterator it = graphCopy.labelledSuccessors(currentNodeId);
             for (long neighborNodeId; (neighborNodeId = it.nextLong()) != -1; ) {
                 if (graphCopy.getNodeType(currentNodeId) == SwhType.SNP) {
