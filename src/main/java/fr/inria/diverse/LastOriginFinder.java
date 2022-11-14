@@ -8,7 +8,6 @@ import fr.inria.diverse.tools.Configuration;
 import fr.inria.diverse.tools.ToolBox;
 import it.unimi.dsi.big.webgraph.LazyLongIterator;
 import it.unimi.dsi.big.webgraph.labelling.ArcLabelledNodeIterator;
-import it.unimi.dsi.bits.Fast;
 import org.softwareheritage.graph.SwhType;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 import org.softwareheritage.graph.labels.DirEntry;
@@ -24,9 +23,9 @@ import static it.unimi.dsi.big.webgraph.labelling.BitStreamArcLabelledImmutableG
 public class LastOriginFinder extends GraphExplorer {
 
     public static String rawExportPath = Configuration.getInstance()
-            .getExportPath() + "/LastOriginFinder/origins.json";
+            .getExportPath() + "/LastOriginFinder/origins";
     public static String exportPath = Configuration.getInstance()
-            .getExportPath() + "/LastOriginFinder/originsFiltered.json";
+            .getExportPath() + "/LastOriginFinder/originsFiltered";
     private final List<Origin> origins = new LinkedList<>();
     public long size;
 
@@ -55,15 +54,6 @@ public class LastOriginFinder extends GraphExplorer {
 
         while (!queue.isEmpty()) {
             long currentNodeId = queue.poll();
-
-            long l = Fast.mostSignificantBit((size * Byte.SIZE + 1) / (graphCopy.numNodes() + 1));
-            long a = l * currentNodeId;
-            logger.info("For node " + currentNodeId + " a is " + a + " l is " + l);
-            if (a >>> 6 > Integer.MAX_VALUE) {
-
-                logger.error("Will crash node " + currentNodeId);
-            }
-
             ArcLabelledNodeIterator.LabelledArcIterator it = graphCopy.labelledSuccessors(currentNodeId);
             for (long neighborNodeId; (neighborNodeId = it.nextLong()) != -1; ) {
                 if (graphCopy.getNodeType(currentNodeId) == SwhType.SNP) {
@@ -149,9 +139,11 @@ public class LastOriginFinder extends GraphExplorer {
     public void exploreGraphNode(long size) throws InterruptedException {
         super.exploreGraphNode(size);
         //Add final save
-        ToolBox.exportObjectToJson(origins, rawExportPath);
+        ToolBox.serialize(origins, exportPath);
+
+        ToolBox.exportObjectToJson(origins, rawExportPath + ".json");
         ToolBox.exportObjectToJson(origins.stream().filter(origin -> origin.getSnapshot() != null)
-                .collect(Collectors.toList()), exportPath);
+                .collect(Collectors.toList()), exportPath + ".json");
     }
 
     @Override
