@@ -1,8 +1,10 @@
 package fr.inria.diverse.model;
 
-public class Node {
+import java.io.Serializable;
+
+public class Node implements Serializable {
     long nodeId;
-    
+
     public Node() {
     }
 

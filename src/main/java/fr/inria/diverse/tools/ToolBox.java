@@ -2,16 +2,14 @@ package fr.inria.diverse.tools;
 
 import com.google.gson.Gson;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
 import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class ToolBox {
-    public static <T> T loadFile(String fileName, Type type) {
+    public static <T> T loadJsonObject(String fileName, Type type) {
         Gson gson = new Gson();
         try (Reader reader = Files.newBufferedReader(Paths.get(fileName))) {
             return gson.fromJson(reader, type);
@@ -28,7 +26,7 @@ public class ToolBox {
      * @param filename     its filename
      * @param <T>          the type of objectToSave
      */
-    public static <T> void exportFile(T objectToSave, String filename) {
+    public static <T> void exportObjectToJson(T objectToSave, String filename) {
         try {
             createParentIfNeeded(filename);
         } catch (IOException e) {
@@ -41,6 +39,37 @@ public class ToolBox {
         } catch (IOException e) {
             throw new RuntimeException("Error while saving", e);
         }
+    }
+
+    public static <T> void serialize(T objectToSave, String filename) {
+
+        try {
+            createParentIfNeeded(filename);
+            FileOutputStream fileOutputStream = new FileOutputStream(filename);
+            ObjectOutputStream objectOutputStream
+                    = new ObjectOutputStream(fileOutputStream);
+            objectOutputStream.writeObject(objectToSave);
+            objectOutputStream.flush();
+            objectOutputStream.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Error while serializing " + filename);
+        }
+    }
+
+    public static <T> T deserialize(String filename) {
+        try {
+            FileInputStream fileInputStream = new FileInputStream(filename);
+            ObjectInputStream objectInputStream
+                    = new ObjectInputStream(fileInputStream);
+            T object = (T) objectInputStream.readObject();
+            objectInputStream.close();
+            return object;
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("Error file not found while deserializing " + filename, e);
+        } catch (Exception e) {
+            throw new RuntimeException("Error while deserializing " + filename, e);
+        }
+
     }
 
     public static void createParentIfNeeded(String path) throws IOException {

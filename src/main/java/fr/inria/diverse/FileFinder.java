@@ -33,7 +33,7 @@ public class FileFinder extends GraphExplorer {
     @Override
     void exploreGraphNodeCheckpointAction() {
         synchronized (results) {
-            ToolBox.exportFile(results, exportPath);
+            ToolBox.exportObjectToJson(results, exportPath);
         }
     }
 
@@ -43,7 +43,7 @@ public class FileFinder extends GraphExplorer {
         logger.info("Number of file node matching name found : " + results.size());
 
         //Add final save
-        ToolBox.exportFile(results, exportPath);
+        ToolBox.exportObjectToJson(results, exportPath);
     }
 
     /**
@@ -104,7 +104,7 @@ public class FileFinder extends GraphExplorer {
             logger.info("Loading origins");
             Type listType = new TypeToken<ArrayList<Origin>>() {
             }.getType();
-            this.origins = ToolBox.loadFile(LastOriginFinder.exportPath, listType);
+            this.origins = ToolBox.loadJsonObject(LastOriginFinder.exportPath, listType);
             this.exploreGraphNode(this.origins.size());
         } catch (Exception e) {
             e.printStackTrace();

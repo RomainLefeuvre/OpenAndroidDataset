@@ -141,7 +141,7 @@ public class LastOriginFinder extends GraphExplorer {
     @Override
     void exploreGraphNodeCheckpointAction() {
         synchronized (origins) {
-            ToolBox.exportFile(origins, exportPath);
+            ToolBox.serialize(origins, exportPath);
         }
     }
 
@@ -149,8 +149,8 @@ public class LastOriginFinder extends GraphExplorer {
     public void exploreGraphNode(long size) throws InterruptedException {
         super.exploreGraphNode(size);
         //Add final save
-        ToolBox.exportFile(origins, rawExportPath);
-        ToolBox.exportFile(origins.stream().filter(origin -> origin.getSnapshot() != null)
+        ToolBox.exportObjectToJson(origins, rawExportPath);
+        ToolBox.exportObjectToJson(origins.stream().filter(origin -> origin.getSnapshot() != null)
                 .collect(Collectors.toList()), exportPath);
     }
 

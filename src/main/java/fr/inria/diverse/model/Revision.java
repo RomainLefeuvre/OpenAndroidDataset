@@ -2,7 +2,9 @@ package fr.inria.diverse.model;
 
 import org.jetbrains.annotations.NotNull;
 
-public class Revision extends Node {
+import java.io.Serializable;
+
+public class Revision extends Node implements Serializable {
     private Long commitTimestamp;
 
     public Revision() {

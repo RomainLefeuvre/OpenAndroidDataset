@@ -4,7 +4,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 
-public class Snapshot extends Node {
+import java.io.Serializable;
+
+public class Snapshot extends Node implements Serializable {
     static Logger logger = LogManager.getLogger(Snapshot.class);
     private Branch branch;
     private Revision rev;

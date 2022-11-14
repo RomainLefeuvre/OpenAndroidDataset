@@ -3,7 +3,9 @@ package fr.inria.diverse.model;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class Origin extends Node {
+import java.io.Serializable;
+
+public class Origin extends Node implements Serializable {
     static Logger logger = LogManager.getLogger(Snapshot.class);
 
     private Snapshot snapshot;

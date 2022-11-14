@@ -58,7 +58,7 @@ public class AndroidManifestAnalyser {
             }
 
         }
-        ToolBox.exportFile(results, "AndroidManifestResults.json");
+        ToolBox.exportObjectToJson(results, "AndroidManifestResults.json");
 
     }
 
@@ -106,7 +106,7 @@ public class AndroidManifestAnalyser {
     public static List<FileFinder.Result> loadResultsMap() {
         Type listType = new TypeToken<ArrayList<FileFinder.Result>>() {
         }.getType();
-        return ToolBox.loadFile("finalResult.json", listType);
+        return ToolBox.loadJsonObject("finalResult.json", listType);
     }
 
     public static class Result {
