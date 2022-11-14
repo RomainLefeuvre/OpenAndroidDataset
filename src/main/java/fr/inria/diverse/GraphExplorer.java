@@ -53,6 +53,22 @@ public abstract class GraphExplorer {
         }
     }
 
+    public void exploreGraphNodeSequentialy(long size) {
+        logger.info("Num of nodes: " + size);
+        for (long currentNodeId = size - 1; currentNodeId > 0; currentNodeId--) {
+            if (currentNodeId % 1000000 == 0) {
+                logger.info(currentNodeId + " node left over " + size);
+            }
+            try {
+                this.exploreGraphNodeAction(currentNodeId, this.graph.getGraph());
+            } catch (Throwable e) {
+                logger.error("Error catch for node " + currentNodeId, e);
+            }
+
+        }
+    }
+
+
     /**
      * Function call by exploreGraphNode at each node
      *

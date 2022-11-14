@@ -1,6 +1,7 @@
 package fr.inria.diverse;
 
 import fr.inria.diverse.tools.Configuration;
+import it.unimi.dsi.big.webgraph.labelling.ArcLabelledNodeIterator;
 import it.unimi.dsi.bits.Fast;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,7 +43,7 @@ public class Main {
             logger.error("Will crash node " + currentNodeId);
         }
         logger.info(g.getGraph().numNodes());
-        //ArcLabelledNodeIterator.LabelledArcIterator it = g.getGraph().labelledSuccessors(25000000000L);
+        ArcLabelledNodeIterator.LabelledArcIterator it = g.getGraph().labelledSuccessors(25000000000L);
         /*GraphExplorer debugExplorer = new DebugExplorer(g);
         debugExplorer.run();
         */

@@ -129,7 +129,8 @@ public class LastOriginFinder extends GraphExplorer {
                 logger.warn("Skipping origin node " + currentNodeId + " because its url is empty");
             } else {
                 Origin currentOrigin = new Origin(originUrl, currentNodeId);
-                findLastSnap(currentOrigin, graphCopy.copy());
+                //findLastSnap(currentOrigin, graphCopy.copy());
+                findLastSnap(currentOrigin, graphCopy);
                 if (currentOrigin.getSnapshot() != null)
                     synchronized (origins) {
                         origins.add(currentOrigin);
@@ -157,7 +158,7 @@ public class LastOriginFinder extends GraphExplorer {
     @Override
     void run() {
         try {
-            this.exploreGraphNode(graph.getGraph().numNodes());
+            this.exploreGraphNodeSequentialy(graph.getGraph().numNodes());
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Error", e);
