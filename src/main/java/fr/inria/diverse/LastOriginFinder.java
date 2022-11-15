@@ -61,7 +61,7 @@ public class LastOriginFinder extends GraphExplorer {
                     DirEntry label = labels[0];
 
                     //Getting the first revision node
-                    final Long revNode;
+                    Long revNode;
                     if (graphCopy.getNodeType(neighborNodeId) == SwhType.REV) {
                         revNode = neighborNodeId;
                     } else {
@@ -71,9 +71,27 @@ public class LastOriginFinder extends GraphExplorer {
 
 
                         revNode = childIt.nextLong();
-                        if (graphCopy.getNodeType(revNode) != SwhType.REV) {
-                            logger.warn("Not a revision as expected " + graphCopy.getNodeType(revNode) +
-                                    " instead for current node " + currentNodeId);
+                        if (revNode != null && graphCopy.getNodeType(revNode) != SwhType.REV) {
+
+                            childIt = (graphCopy.copy())
+                                    .successors(neighborNodeId);
+
+                            revNode = childIt.nextLong();
+                            // ToDo find the reason why a release node can have another release node as child and remove
+                            // this ...
+                            while (graphCopy.getNodeType(revNode) == SwhType.REL) {
+                                childIt = (graphCopy.copy())
+                                        .successors(revNode);
+
+                                revNode = childIt.nextLong();
+                            }
+                            if (graphCopy.getNodeType(revNode) != SwhType.REV) {
+                                logger.warn("Not a revision as expected " + graphCopy.getNodeType(revNode) +
+                                        " instead for current node " + currentNodeId);
+                            }
+                        }
+                        if (revNode == null || graphCopy.getNodeType(revNode) != SwhType.REV) {
+                            continue;
                         }
                         if (childIt.nextLong() != -1) {
                             logger.warn("Iterator not ended as expected at current node " + currentNodeId);

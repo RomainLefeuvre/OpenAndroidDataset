@@ -16,7 +16,7 @@ public class FileFinder extends GraphExplorer {
             .getExportPath() + "/FileFinder/result.json";
 
     final List<Result> results = new ArrayList<>();
-    ArrayList<Origin> origins;
+    List<Origin> origins;
 
     public FileFinder(Graph graph) {
         super(graph);
