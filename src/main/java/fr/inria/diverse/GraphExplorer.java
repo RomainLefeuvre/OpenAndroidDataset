@@ -7,6 +7,8 @@ import org.apache.logging.log4j.Logger;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
 public abstract class GraphExplorer {
@@ -31,8 +33,10 @@ public abstract class GraphExplorer {
             long finalThread = thread;
             SwhUnidirectionalGraph graphCopy = graph.getGraph().copy();
             executor.execute(() -> {
+                Instant timestamp = Instant.now();
                 for (long currentNodeId = finalThread; currentNodeId < size; currentNodeId = currentNodeId + this.config.getThreadNumber()) {
-                    if ((currentNodeId - finalThread) % 1000000 == 0) {
+                    if (Duration.between(timestamp, Instant.now()).toMinutes() > 5) {
+                        timestamp = Instant.now();
                         logger.info("Node " + currentNodeId + " over " + size + " thread " + finalThread);
                     }
                     try {
