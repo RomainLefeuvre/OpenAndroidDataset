@@ -1,6 +1,5 @@
 package fr.inria.diverse;
 
-import com.google.common.reflect.TypeToken;
 import fr.inria.diverse.model.Origin;
 import fr.inria.diverse.tools.Configuration;
 import fr.inria.diverse.tools.ToolBox;
@@ -10,7 +9,6 @@ import org.softwareheritage.graph.SwhUnidirectionalGraph;
 import org.softwareheritage.graph.labels.DirEntry;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.util.*;
 
 public class FileFinder extends GraphExplorer {
@@ -102,9 +100,7 @@ public class FileFinder extends GraphExplorer {
     void run() throws InterruptedException, IOException {
         try {
             logger.info("Loading origins");
-            Type listType = new TypeToken<ArrayList<Origin>>() {
-            }.getType();
-            this.origins = ToolBox.loadJsonObject(LastOriginFinder.exportPath, listType);
+            this.origins = ToolBox.deserialize(LastOriginFinder.exportPath);
             this.exploreGraphNode(this.origins.size());
         } catch (Exception e) {
             e.printStackTrace();
