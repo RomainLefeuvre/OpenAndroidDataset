@@ -87,7 +87,7 @@ public class LastOriginFinder extends GraphExplorer {
                             }
                             if (graphCopy.getNodeType(revNode) != SwhType.REV) {
                                 logger.warn("Not a revision as expected " + graphCopy.getNodeType(revNode) +
-                                        " instead for current node " + currentNodeId);
+                                        " instead for current node " + currentNodeId + "neighborNodeId " + neighborNodeId);
                             }
                         }
                         if (revNode == null || graphCopy.getNodeType(revNode) != SwhType.REV) {

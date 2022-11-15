@@ -15,7 +15,7 @@ public class ToolBox {
             return gson.fromJson(reader, type);
 
         } catch (IOException e) {
-            throw new RuntimeException("Error while saving", e);
+            throw new RuntimeException("Error while loading", e);
         }
     }
 

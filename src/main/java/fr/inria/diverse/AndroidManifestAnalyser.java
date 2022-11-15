@@ -3,6 +3,7 @@ package fr.inria.diverse;
 import com.google.common.reflect.TypeToken;
 import fr.inria.diverse.model.ResolveDto;
 import fr.inria.diverse.restClient.ClientEndpoint;
+import fr.inria.diverse.tools.Configuration;
 import fr.inria.diverse.tools.ToolBox;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,19 +26,22 @@ import java.util.List;
 
 public class AndroidManifestAnalyser {
     static Logger logger = LogManager.getLogger(AndroidManifestAnalyser.class);
-    static String backupUri = "export/swh/files/";
+    static String backupUri;
 
     public static void main(String[] args) throws IOException {
         //Import result
+        Configuration.init();
+        backupUri = Configuration.getInstance()
+                .getExportPath() + "/swh/files/";
         List<FileFinder.Result> sources = loadResultsMap();
         List<Result> results = new LinkedList<>();
 
         for (FileFinder.Result origin : sources) {
-            logger.debug("Current Origin : " + origin.getOriginUrl());
+            logger.info("Current Origin : " + origin.getOriginUrl());
             Result result = new Result(origin.getOriginUrl(), origin.getOriginId());
             for (FileFinder.DFSNode fileNode : origin.getFileNodes()) {
                 String manifest = getAndroidManifest(fileNode.getSwhid());
-                logger.debug("Current manifest : " + manifest);
+                logger.info("Current manifest : " + manifest);
 
                 Path filePath = Paths.get(backupUri, fileNode.getSwhid());
                 Path parentDir = filePath.getParent();
@@ -45,12 +49,12 @@ public class AndroidManifestAnalyser {
                     Files.createDirectories(parentDir);
                 Files.write(filePath, manifest.getBytes());
 
-               /* String androidManifestPackage = getAndroidManifestPackage(manifest);
-                logger.debug("androidManifestPackage found : " + androidManifestPackage);
+                String androidManifestPackage = getAndroidManifestPackage(manifest);
+                logger.info("androidManifestPackage found : " + androidManifestPackage);
 
                 if (androidManifestPackage != null && !androidManifestPackage.equals("")) {
                     result.addGplayPackage(androidManifestPackage);
-                }*/
+                }
 
             }
             if (result.gplayPackages.size() > 0) {
@@ -58,7 +62,8 @@ public class AndroidManifestAnalyser {
             }
 
         }
-        ToolBox.exportObjectToJson(results, "AndroidManifestResults.json");
+        ToolBox.exportObjectToJson(results, Configuration.getInstance()
+                .getExportPath() + "/swh/AndroidManifestResults.json");
 
     }
 
@@ -106,7 +111,7 @@ public class AndroidManifestAnalyser {
     public static List<FileFinder.Result> loadResultsMap() {
         Type listType = new TypeToken<ArrayList<FileFinder.Result>>() {
         }.getType();
-        return ToolBox.loadJsonObject("finalResult.json", listType);
+        return ToolBox.loadJsonObject(FileFinder.exportPath, listType);
     }
 
     public static class Result {
