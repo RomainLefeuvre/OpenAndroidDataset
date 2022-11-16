@@ -12,13 +12,9 @@ import org.softwareheritage.graph.SwhType;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 import org.softwareheritage.graph.labels.DirEntry;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static it.unimi.dsi.big.webgraph.labelling.BitStreamArcLabelledImmutableGraph.LABELS_EXTENSION;
 
 public class LastOriginFinder extends GraphExplorer {
 
@@ -27,16 +23,9 @@ public class LastOriginFinder extends GraphExplorer {
     public static String exportPath = Configuration.getInstance()
             .getExportPath() + "/LastOriginFinder/originsFiltered";
     private final List<Origin> origins = new LinkedList<>();
-    public long size;
 
     public LastOriginFinder(Graph graph) throws FileNotFoundException {
         super(graph);
-        FileInputStream fis = new FileInputStream(this.config.getGraphPath() + "-labelled" + LABELS_EXTENSION);
-        try {
-            size = fis.getChannel().size();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     /**

@@ -3,10 +3,9 @@ package fr.inria.diverse;
 import fr.inria.diverse.tools.Configuration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.softwareheritage.graph.SwhUnidirectionalGraph;
 
 import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
 
 public class Main {
     static Logger logger = LogManager.getLogger(Main.class);
@@ -19,6 +18,19 @@ public class Main {
         } else {
             Configuration.init();
         }
+
+        Graph g = new Graph() {
+            @Override
+            public void loadGraph() throws IOException {
+                this.graph = SwhUnidirectionalGraph.loadMapped(this.config.getGraphPath());
+            }
+        };
+        g.loadGraph();
+
+        OriginFinder originFinder = new OriginFinder(g);
+        originFinder.run();
+
+        /*
         Graph g = new Graph();
         g.loadGraph();
 
@@ -36,6 +48,6 @@ public class Main {
         fileFinder.run();
         inst1 = Instant.now();
         logger.debug("Elapsed Time: " + Duration.between(inst2, inst1).toSeconds());
-
+*/
     }
 }
