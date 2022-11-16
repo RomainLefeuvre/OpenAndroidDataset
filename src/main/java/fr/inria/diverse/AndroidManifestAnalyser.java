@@ -74,8 +74,10 @@ public class AndroidManifestAnalyser {
      * @return the file content
      */
     public static String getAndroidManifest(String swhid) {
-        ResolveDto dto = ClientEndpoint.swhClient().resolve(swhid);
-        return ClientEndpoint.swhClient().getContent(dto.getFullHash());
+        ResolveDto dto = ClientEndpoint.swhClient()
+                .resolve("Bearer " + Configuration.getInstance().getSwhToken(), swhid);
+        return ClientEndpoint.swhClient()
+                .getContent("Bearer " + Configuration.getInstance().getSwhToken(), dto.getFullHash());
     }
 
     public static String getAndroidManifestPackage(String androidManifest) {

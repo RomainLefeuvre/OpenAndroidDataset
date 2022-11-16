@@ -1,21 +1,17 @@
 package fr.inria.diverse.restClient;
 
 import fr.inria.diverse.model.ResolveDto;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-
 
 public interface SwhClient {
 
     @GET
     @Path("/resolve/{swhid}/")
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
-    ResolveDto resolve(@PathParam("swhid") String swhid);
+    ResolveDto resolve(@HeaderParam("Authorization") String authorization, @PathParam("swhid") String swhid);
 
     @GET
     @Path("/content/{id}/raw/")
-    String getContent(@PathParam("id") String id);
+    String getContent(@HeaderParam("Authorization") String authorization, @PathParam("id") String id);
 }
