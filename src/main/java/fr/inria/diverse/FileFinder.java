@@ -108,7 +108,7 @@ public class FileFinder extends GraphExplorer {
         }
     }
 
-    public class DFSNode {
+    public static class DFSNode {
         private String path;
         private long id;
         private String swhid;
@@ -117,6 +117,12 @@ public class FileFinder extends GraphExplorer {
             this.path = "/";
             this.id = id;
             this.swhid = "";
+        }
+
+        public DFSNode(DFSNode node) {
+            this.path = node.getPath();
+            this.id = node.getId();
+            this.swhid = node.getSwhid();
         }
 
         @Override
@@ -142,7 +148,6 @@ public class FileFinder extends GraphExplorer {
             this.id = id;
         }
 
-
         public DFSNode createChild(long id, String nodeName) {
             DFSNode res = new DFSNode(id);
             res.path = this.path;
@@ -155,15 +160,16 @@ public class FileFinder extends GraphExplorer {
             return path;
         }
 
-        public void loadSwhid() {
-            this.swhid = graph.getGraph().getSWHID(this.getId()).toString();
-        }
-
         public String getSwhid() {
             return swhid;
         }
 
+        public void setSwhid(String swhid) {
+            this.swhid = swhid;
+        }
+
     }
+
 
     public class Result {
         private long originId;
@@ -175,7 +181,7 @@ public class FileFinder extends GraphExplorer {
             this.originUrl = originUrl;
             this.fileNodes = fileNodes;
             for (DFSNode node : fileNodes) {
-                node.loadSwhid();
+                node.setSwhid(graph.getGraph().getSWHID(node.getId()).toString());
             }
         }
 

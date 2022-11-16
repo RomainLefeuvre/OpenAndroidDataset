@@ -37,11 +37,11 @@ public class AndroidManifestAnalyser {
         List<Result> results = new LinkedList<>();
 
         for (FileFinder.Result origin : sources) {
-            logger.info("Current Origin : " + origin.getOriginUrl());
+            logger.debug("Current Origin : " + origin.getOriginUrl());
             Result result = new Result(origin.getOriginUrl(), origin.getOriginId());
             for (FileFinder.DFSNode fileNode : origin.getFileNodes()) {
                 String manifest = getAndroidManifest(fileNode.getSwhid());
-                logger.info("Current manifest : " + manifest);
+                logger.debug("Current manifest : " + manifest);
 
                 Path filePath = Paths.get(backupUri, fileNode.getSwhid());
                 Path parentDir = filePath.getParent();
@@ -49,15 +49,17 @@ public class AndroidManifestAnalyser {
                     Files.createDirectories(parentDir);
                 Files.write(filePath, manifest.getBytes());
 
-                String androidManifestPackage = getAndroidManifestPackage(manifest);
-                logger.info("androidManifestPackage found : " + androidManifestPackage);
+                String androidManifestPackage = null;
+                androidManifestPackage = getAndroidManifestPackage(manifest);
+
+                logger.debug("androidManifestPackage found : " + androidManifestPackage);
 
                 if (androidManifestPackage != null && !androidManifestPackage.equals("")) {
-                    result.addGplayPackage(androidManifestPackage);
+                    result.addGplayPackage(new AndroidNode(fileNode, androidManifestPackage));
                 }
 
             }
-            if (result.gplayPackages.size() > 0) {
+            if (result.androidNodes.size() > 0) {
                 results.add(result);
             }
 
@@ -81,7 +83,6 @@ public class AndroidManifestAnalyser {
     }
 
     public static String getAndroidManifestPackage(String androidManifest) {
-        String androidManifestPackage;
         byte[] byteArray;
         try {
             byteArray = androidManifest.getBytes("UTF-8");
@@ -95,20 +96,20 @@ public class AndroidManifestAnalyser {
                     StartElement startElement = nextEvent.asStartElement();
                     if (startElement.getName().getLocalPart().equals("manifest")) {
                         Attribute packageAttribute = startElement.getAttributeByName(new QName("package"));
-                        androidManifestPackage = packageAttribute.getValue();
-                        return androidManifestPackage;
+                        return packageAttribute.getValue();
 
                     }
                 }
             }
 
-
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
+            logger.debug(androidManifest);
+
         }
         return null;
-    }
 
+    }
 
     public static List<FileFinder.Result> loadResultsMap() {
         Type listType = new TypeToken<ArrayList<FileFinder.Result>>() {
@@ -116,15 +117,16 @@ public class AndroidManifestAnalyser {
         return ToolBox.loadJsonObject(FileFinder.exportPath, listType);
     }
 
+
     public static class Result {
         private String uri;
         private Long originId;
-        private List<String> gplayPackages = new LinkedList<>();
+        private List<AndroidNode> androidNodes = new LinkedList<>();
 
-        public Result(String uri, Long id, List<String> gplayPackages) {
+        public Result(String uri, Long id, List<AndroidNode> androidNodes) {
             this.uri = uri;
             this.originId = id;
-            this.gplayPackages = gplayPackages;
+            this.androidNodes = androidNodes;
         }
 
         public Result(String uri, Long id) {
@@ -148,16 +150,33 @@ public class AndroidManifestAnalyser {
             this.originId = originId;
         }
 
-        public List<String> getGplayPackages() {
-            return gplayPackages;
+        public List<AndroidNode> getAndroidNodes() {
+            return androidNodes;
         }
 
-        public void setGplayPackages(List<String> gplayPackages) {
-            this.gplayPackages = gplayPackages;
+        public void setAndroidNodes(List<AndroidNode> androidNodes) {
+            this.androidNodes = androidNodes;
         }
 
-        public void addGplayPackage(String gplayPackage) {
-            this.gplayPackages.add(gplayPackage);
+        public void addGplayPackage(AndroidNode androidNode) {
+            this.androidNodes.add(androidNode);
+        }
+    }
+
+    public static class AndroidNode extends FileFinder.DFSNode {
+        public String gplayPackage;
+
+        public AndroidNode(FileFinder.DFSNode node, String gplayPackage) {
+            super(node);
+            this.gplayPackage = gplayPackage;
+        }
+
+        public String getGplayPackage() {
+            return gplayPackage;
+        }
+
+        public void setGplayPackage(String gplayPackage) {
+            this.gplayPackage = gplayPackage;
         }
     }
 

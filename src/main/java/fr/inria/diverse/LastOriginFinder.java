@@ -1,5 +1,6 @@
 package fr.inria.diverse;
 
+import com.google.common.reflect.TypeToken;
 import fr.inria.diverse.model.Branch;
 import fr.inria.diverse.model.Origin;
 import fr.inria.diverse.model.Revision;
@@ -12,7 +13,7 @@ import org.softwareheritage.graph.SwhType;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 import org.softwareheritage.graph.labels.DirEntry;
 
-import java.io.FileNotFoundException;
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,9 +24,13 @@ public class LastOriginFinder extends GraphExplorer {
     public static String exportPath = Configuration.getInstance()
             .getExportPath() + "/LastOriginFinder/originsFiltered";
     private final List<Origin> origins = new LinkedList<>();
+    private final List<Long> originNodeIds;
 
-    public LastOriginFinder(Graph graph) throws FileNotFoundException {
+    public LastOriginFinder(Graph graph) {
         super(graph);
+        Type listType = new TypeToken<ArrayList<Long>>() {
+        }.getType();
+        this.originNodeIds = ToolBox.loadJsonObject(OriginFinder.exportPath + ".json", listType);
     }
 
     /**
@@ -117,7 +122,8 @@ public class LastOriginFinder extends GraphExplorer {
     }
 
     @Override
-    void exploreGraphNodeAction(long currentNodeId, SwhUnidirectionalGraph graphCopy) {
+    void exploreGraphNodeAction(long i, SwhUnidirectionalGraph graphCopy) {
+        long currentNodeId = this.originNodeIds.get((int) i);
         if (graphCopy.getNodeType(currentNodeId) == SwhType.ORI) {
             String originUrl = graphCopy.getUrl(currentNodeId);
             originUrl = originUrl != null ? originUrl : "";
@@ -155,7 +161,7 @@ public class LastOriginFinder extends GraphExplorer {
     @Override
     void run() {
         try {
-            this.exploreGraphNode(graph.getGraph().numNodes());
+            this.exploreGraphNode(this.originNodeIds.size());
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Error", e);

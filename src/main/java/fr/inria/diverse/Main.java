@@ -6,6 +6,8 @@ import org.apache.logging.log4j.Logger;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 
 public class Main {
     static Logger logger = LogManager.getLogger(Main.class);
@@ -30,8 +32,8 @@ public class Main {
         OriginFinder originFinder = new OriginFinder(g);
         originFinder.run();
 
-        /*
-        Graph g = new Graph();
+
+        g = new Graph();
         g.loadGraph();
 
         logger.info("-----------LastOriginFinder Finder stage-----------");
@@ -48,6 +50,6 @@ public class Main {
         fileFinder.run();
         inst1 = Instant.now();
         logger.debug("Elapsed Time: " + Duration.between(inst2, inst1).toSeconds());
-*/
+
     }
 }
