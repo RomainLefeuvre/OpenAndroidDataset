@@ -40,7 +40,7 @@ public abstract class GraphExplorer {
                         logger.info("Node " + currentNodeId + " over " + size + " thread " + finalThread);
                     }
                     try {
-                        this.exploreGraphNodeAction(currentNodeId, graphCopy);
+                        this.exploreGraphNodeAction(currentNodeId, graphCopy.copy());
                     } catch (Throwable e) {
                         logger.error("Error catch for node " + currentNodeId, e);
                     }

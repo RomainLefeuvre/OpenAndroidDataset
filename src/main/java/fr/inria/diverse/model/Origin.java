@@ -29,7 +29,6 @@ public class Origin extends Node implements Serializable {
      */
     public void checkSnapshotAndUpdate(Snapshot snap) {
         if (this.snapshot == null || (this.snapshot.compareTo(snap) < 0)) {
-            logger.debug("Updating snapshot");
             this.snapshot = snap;
         }
     }

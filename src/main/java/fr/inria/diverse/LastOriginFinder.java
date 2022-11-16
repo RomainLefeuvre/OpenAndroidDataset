@@ -50,81 +50,80 @@ public class LastOriginFinder extends GraphExplorer {
         HashSet<Long> visited = new HashSet<>();
         queue.add(originNode.getNodeId());
         visited.add(originNode.getNodeId());
-
-
         while (!queue.isEmpty()) {
             long currentNodeId = queue.poll();
-            ArcLabelledNodeIterator.LabelledArcIterator it = graphCopy.labelledSuccessors(currentNodeId);
+            ArcLabelledNodeIterator.LabelledArcIterator it = graphCopy.copy().labelledSuccessors(currentNodeId);
             for (long neighborNodeId; (neighborNodeId = it.nextLong()) != -1; ) {
                 if (graphCopy.getNodeType(currentNodeId) == SwhType.SNP) {
                     final DirEntry[] labels = (DirEntry[]) it.label().get();
                     DirEntry label = labels[0];
-
-                    //Getting the first revision node
-                    Long revNode;
-                    if (graphCopy.getNodeType(neighborNodeId) == SwhType.REV) {
-                        revNode = neighborNodeId;
-                    } else {
-                        //We probably find a release node, lets get a rev node!
-                        LazyLongIterator childIt = (graphCopy.copy())
-                                .successors(neighborNodeId);
-
-
-                        revNode = childIt.nextLong();
-                        if (revNode != null && graphCopy.getNodeType(revNode) != SwhType.REV) {
-
-                            childIt = (graphCopy.copy())
-                                    .successors(neighborNodeId);
-
-                            revNode = childIt.nextLong();
-                            // ToDo find the reason why a release node can have another release node as child and remove
-                            // this ...
-                            while (graphCopy.getNodeType(revNode) == SwhType.REL) {
-                                childIt = (graphCopy.copy())
-                                        .successors(revNode);
-
-                                revNode = childIt.nextLong();
+                    long revisionNodeId = this.getFirstRevisionNode(neighborNodeId, graphCopy);
+                    if (revisionNodeId != -1) {
+                        String url = new String(graphCopy.getLabelName(label.filenameId));
+                        String branchName = url.replace("refs/heads/", "");
+                        if (Branch.BranchType.isABranchType(branchName)) {
+                            logger.debug("Branch Name " + branchName);
+                            Long currentTimestamp = graphCopy.getCommitterTimestamp(revisionNodeId);
+                            if (currentTimestamp != null) {
+                                Revision currentRevision = new Revision(revisionNodeId, currentTimestamp);
+                                Snapshot currentSnap = new Snapshot(branchName, currentNodeId, currentRevision);
+                                originNode.checkSnapshotAndUpdate(currentSnap);
+                            } else {
+                                logger.debug("Impossible to get current revision timestamp for revision " + currentNodeId);
                             }
-                            if (graphCopy.getNodeType(revNode) != SwhType.REV) {
-                                logger.warn("Not a revision as expected " + graphCopy.getNodeType(revNode) +
-                                        " instead for current node " + currentNodeId + "neighborNodeId " + neighborNodeId);
-                            }
-                        }
-                        if (revNode == null || graphCopy.getNodeType(revNode) != SwhType.REV) {
-                            continue;
-                        }
-                        if (childIt.nextLong() != -1) {
-                            logger.warn("Iterator not ended as expected at current node " + currentNodeId);
-                        }
-                    }
-
-                    String url = new String(graphCopy.getLabelName(label.filenameId));
-                    String branchName = url.replace("refs/heads/", "");
-                    if (Branch.BranchType.isABranchType(branchName)) {
-                        logger.debug("Branch Name " + branchName);
-                        Long currentTimestamp = graphCopy.getCommitterTimestamp(revNode);
-                        if (currentTimestamp != null) {
-                            Revision currentRevision = new Revision(revNode, currentTimestamp);
-                            Snapshot currentSnap = new Snapshot(branchName, currentNodeId, currentRevision);
-                            originNode.checkSnapshotAndUpdate(currentSnap);
                         } else {
-                            logger.debug("Impossible to get current revision timestamp for revision " + currentNodeId);
+                            logger.debug("Not a valid branch name " + branchName);
                         }
-                    } else {
-                        logger.debug("Not a valid branch name " + branchName);
                     }
-
-
-                } else {
+                    //For the first iteration , the current node id is an origin
+                } else if (graphCopy.getNodeType(currentNodeId) == SwhType.ORI) {
                     if (!visited.contains(neighborNodeId)) {
                         queue.add(neighborNodeId);
                         visited.add(neighborNodeId);
                     }
+                } else {
+                    logger.error("Error while finding last snapshot, for " + originNode.getNodeId());
+                    throw new RuntimeException("Not a snapshot node or an origin node");
                 }
-
-
             }
         }
+
+    }
+
+    /**
+     * Get the first revision Node of a child of a snapshot node
+     *
+     * @param snapNodeChildId
+     * @return the id of the first revision node
+     */
+    private long getFirstRevisionNode(long snapNodeChildId, SwhUnidirectionalGraph graphCopy) {
+        Long revNode = -1L;
+        //If the child is a rev, it's over
+        if (graphCopy.getNodeType(snapNodeChildId) == SwhType.REV) {
+            revNode = snapNodeChildId;
+        } else {
+            //Else, we probably find a release node, lets get a rev node!
+            LazyLongIterator childIt = (graphCopy.copy())
+                    .successors(snapNodeChildId);
+            Long candidateNode = childIt.nextLong();
+            //In some cases a release node can have another release node as child, ToDo understand how it is possible
+            while (candidateNode != null && candidateNode != -1 && graphCopy.getNodeType(candidateNode) == SwhType.REL) {
+                childIt = (graphCopy.copy())
+                        .successors(candidateNode);
+                candidateNode = childIt.nextLong();
+            }
+
+            if (candidateNode != null && candidateNode != -1 && graphCopy.getNodeType(candidateNode) == SwhType.REV) {
+                revNode = candidateNode;
+            } else {
+                logger.warn("Not a revision as expected " + graphCopy.getNodeType(candidateNode) +
+                        " instead for candidate node " + candidateNode + " unable to find rev node for " + snapNodeChildId + " snap child");
+            }
+            if (childIt.nextLong() != -1) {
+                logger.warn("Iterator not ended as expected at candidate node " + candidateNode);
+            }
+        }
+        return revNode;
 
     }
 
