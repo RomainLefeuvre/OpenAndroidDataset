@@ -31,6 +31,7 @@ public class LastOriginFinder extends GraphExplorer {
         Type listType = new TypeToken<ArrayList<Long>>() {
         }.getType();
         this.originNodeIds = ToolBox.loadJsonObject(OriginFinder.exportPath + ".json", listType);
+        logger.info("Number of origins: " + originNodeIds.size());
     }
 
     /**
@@ -110,7 +111,7 @@ public class LastOriginFinder extends GraphExplorer {
             if (candidateNode != null && candidateNode != -1 && graphCopy.getNodeType(candidateNode) == SwhType.REV) {
                 revNode = candidateNode;
             } else {
-                logger.warn("Not a revision as expected " + graphCopy.getNodeType(candidateNode) +
+                logger.debug("Not a revision as expected " + graphCopy.getNodeType(candidateNode) +
                         " instead for candidate node " + candidateNode + " unable to find rev node for " + snapNodeChildId + " snap child");
             }
             if (childIt.nextLong() != -1) {

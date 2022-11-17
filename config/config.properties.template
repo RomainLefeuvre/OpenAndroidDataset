@@ -3,4 +3,5 @@ graphPath=/dataset/graph
 exportPath=export/
 targetedFileName=AndroidManifest.xml
 loadingMode=MAPPED
+checkPointIntervalInMinutes=30
 swhToken=XXXXXXXXXXXXXXXXXXx

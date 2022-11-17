@@ -30,6 +30,7 @@ public class Configuration {
     private final String loadingMode;
     private final String swhToken;
     private final String exportPath;
+    private final int checkPointIntervalInMinutes;
 
     private Configuration(String configUri) {
         Properties props = new Properties();
@@ -47,6 +48,8 @@ public class Configuration {
         this.loadingMode = props.getProperty("loadingMode");
         this.swhToken = props.getProperty("swhToken");
         this.exportPath = props.getProperty("exportPath");
+        this.checkPointIntervalInMinutes = Integer.parseInt(props.getProperty("checkPointIntervalInMinutes"));
+
     }
 
     public static void init(String uri) {
@@ -95,4 +98,7 @@ public class Configuration {
         return exportPath;
     }
 
+    public int getCheckPointIntervalInMinutes() {
+        return checkPointIntervalInMinutes;
+    }
 }

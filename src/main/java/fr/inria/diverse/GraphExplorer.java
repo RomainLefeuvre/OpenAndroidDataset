@@ -35,7 +35,8 @@ public abstract class GraphExplorer {
             executor.execute(() -> {
                 Instant timestamp = Instant.now();
                 for (long currentNodeId = finalThread; currentNodeId < size; currentNodeId = currentNodeId + this.config.getThreadNumber()) {
-                    if (Duration.between(timestamp, Instant.now()).toMinutes() > 5) {
+                    if (Duration.between(timestamp, Instant.now())
+                            .toMinutes() > config.getCheckPointIntervalInMinutes()) {
                         timestamp = Instant.now();
                         logger.info("Node " + currentNodeId + " over " + size + " thread " + finalThread);
                     }
@@ -50,7 +51,7 @@ public abstract class GraphExplorer {
         }
         executor.shutdown();
         //Waiting Tasks
-        while (!executor.awaitTermination(200, TimeUnit.SECONDS)) {
+        while (!executor.awaitTermination(config.getCheckPointIntervalInMinutes(), TimeUnit.MINUTES)) {
             logger.info("Node traversal completed, waiting for asynchronous tasks. Tasks performed " + executor.getCompletedTaskCount() + " over " + executor.getTaskCount());
             logger.info("Partial checkpoint");
             this.exploreGraphNodeCheckpointAction();
