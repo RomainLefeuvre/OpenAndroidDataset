@@ -64,13 +64,18 @@ public class FileFinder extends GraphExplorer {
                 //Each revision point to the directory tree and an ordered list of all its parent ...
                 //Let's check if it is a CNT or DIR node
                 if (neighborType == SwhType.CNT || neighborType == SwhType.DIR) {
-                    //Labels is a list since in the same folder you can have files with different names but with the same content.
-                    final DirEntry[] labels = (DirEntry[]) it.label().get();
-                    boolean labelsContainsTargetedFileName = Arrays.stream(labels)
-                            .anyMatch(label -> getFileName(label, graphCopy).equals(this.config.getTargetedFileName()));
-                    //If labelsContainsTargetedFileName we take the targeted label, else we get the first one, it does not matter in our case;
-                    final String label = labelsContainsTargetedFileName ? this.config.getTargetedFileName() :
-                            (labels.length > 0 ? getFileName(labels[0], graphCopy) : "");
+                    String label = "";
+                    boolean labelsContainsTargetedFileName = false;
+                    if (neighborType == SwhType.CNT) {
+                        //Labels is a list since in the same folder you can have files with different names but with the same content.
+                        final DirEntry[] labels = (DirEntry[]) it.label().get();
+                        labelsContainsTargetedFileName = Arrays.stream(labels)
+                                .anyMatch(l -> getFileName(l, graphCopy).equals(this.config.getTargetedFileName()));
+                        //If labelsContainsTargetedFileName we take the targeted label, else we get the first one, it does not matter in our case;
+                        label = labelsContainsTargetedFileName ? this.config.getTargetedFileName() :
+                                (labels.length > 0 ? getFileName(labels[0], graphCopy) : "");
+                    }
+
                     if (!visited.contains(neighborNodeId)) {
                         DFSNode neighborNode = currentNode.createChild(neighborNodeId, label);
                         stack.push(neighborNode);
