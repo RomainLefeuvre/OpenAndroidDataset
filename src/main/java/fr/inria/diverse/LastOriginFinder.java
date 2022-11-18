@@ -129,7 +129,7 @@ public class LastOriginFinder extends GraphExplorer {
             String originUrl = graphCopy.getUrl(currentNodeId);
             originUrl = originUrl != null ? originUrl : "";
             if (originUrl.equals("")) {
-                logger.warn("Skipping origin node " + currentNodeId + " because its url is empty");
+                logger.debug("Skipping origin node " + currentNodeId + " because its url is empty");
             } else {
                 Origin currentOrigin = new Origin(originUrl, currentNodeId);
                 findLastSnap(currentOrigin, graphCopy.copy());

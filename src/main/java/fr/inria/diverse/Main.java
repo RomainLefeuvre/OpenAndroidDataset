@@ -32,7 +32,6 @@ public class Main {
         OriginFinder originFinder = new OriginFinder(g);
         originFinder.run();
 
-
         g = new Graph();
         g.loadGraph();
 
