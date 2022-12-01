@@ -1,0 +1,90 @@
+@startuml need_to_find_id
+package {
+
+    abstract class SnapshotChild
+    abstract class DirectoryEntryTarget
+    abstract class Node {
+        +swhid : String
+    }
+    class ContentHashes {
+       + blake2s256 : String
+       + sha1 : String
+       + sha1_git : String
+       + sha256 : String
+    
+    }
+    class Content {
+        + length : String
+        + status : String
+    
+    }
+    Content "1" o-- "1" ContentHashes
+    class Directory {
+    }
+
+    Directory "1" *-- "*" DirectoryEntry
+    class DirectoryEntry {
+        + name : String
+
+    }
+    DirectoryEntry "*" o-- "1" DirectoryEntryTarget
+    class Revision {
+        +message : String
+        +author : String
+        +date : DateTime
+        +committer : String
+        +committerDate : DateTime
+    }
+    Revision "*" *-- "1" Directory
+    Directory "*"*-- "*" Revision
+
+    class Release {
+        + revision : Revision
+        + date : DateTime
+        + author : String
+        + name : String
+        + message : String
+    
+    }
+    class SnapshotBranch {
+      + name : String
+    }
+    SnapshotBranch "*" *-- "1" SnapshotChild
+    class Snapshot {
+    }
+    Snapshot "1" o-- "*" SnapshotBranch
+    class OriginVisit {
+       +visit : int
+       +date : DateTime
+       +originType : String
+       +status : String
+    }
+    OriginVisit "1" o-- "*" Snapshot
+    class Origin {
+        +origin : String
+    }
+    Origin "1" o-- "*" OriginVisit
+}
+
+Node <|-- Origin 
+
+
+Node <|-- Snapshot 
+
+Node <|-- SnapshotBranch 
+
+SnapshotChild <|-- Release 
+
+SnapshotChild <|-- Revision 
+
+Node <|-- DirectoryEntry 
+
+DirectoryEntryTarget <|-- Directory
+
+DirectoryEntryTarget <|-- Content
+
+
+Node <|-- DirectoryEntryTarget
+Node <|-- SnapshotChild
+
+@enduml
