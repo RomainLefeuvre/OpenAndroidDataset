@@ -1,5 +1,4 @@
 @startuml need_to_find_id
-package {
 
     abstract class SnapshotChild
     abstract class DirectoryEntryTarget
@@ -18,7 +17,7 @@ package {
         + status : String
     
     }
-    Content "1" o-- "1" ContentHashes
+    Content "1" *-- "1" ContentHashes
     class Directory {
     }
 
@@ -35,8 +34,8 @@ package {
         +committer : String
         +committerDate : DateTime
     }
-    Revision "*" *-- "1" Directory
-    Directory "*"*-- "*" Revision
+    Revision "*" o-- "1" Directory
+    Directory "*" o-- "*" Revision
 
     class Release {
         + revision : Revision
@@ -46,13 +45,14 @@ package {
         + message : String
     
     }
+
     class SnapshotBranch {
       + name : String
     }
-    SnapshotBranch "*" *-- "1" SnapshotChild
+    SnapshotBranch "*" o-- "1" SnapshotChild
     class Snapshot {
     }
-    Snapshot "1" o-- "*" SnapshotBranch
+    Snapshot "1" *-- "*" SnapshotBranch
     class OriginVisit {
        +visit : int
        +date : DateTime
@@ -63,8 +63,8 @@ package {
     class Origin {
         +origin : String
     }
-    Origin "1" o-- "*" OriginVisit
-}
+    Origin "1" *-- "*" OriginVisit
+
 
 Node <|-- Origin 
 
