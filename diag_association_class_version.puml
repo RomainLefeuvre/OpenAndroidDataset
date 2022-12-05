@@ -1,7 +1,10 @@
 @startuml need_to_find_id
 
-    interface SnapshotChild
-    interface DirectoryChild
+    abstract class Node {
+        +swhid : String
+    }
+
+
 
     class ContentHashes {
        + blake2s256 : String
@@ -10,25 +13,19 @@
        + sha256 : String
     
     }
-    class Content {
-        + swhid : String
+    class Content extends Node{
         + length : String
         + status : String
     
     }
     Content "1" *-- "1" ContentHashes
-    class Directory {
-        +swhid : String
+    class Directory extends Node {
     }
 
-    Directory "1" *-- "*" DirectoryEntry
     class DirectoryEntry {
         + name : String
-
     }
-    DirectoryEntry "*" o-- "1" DirectoryChild
-    class Revision {
-        +swhid : String
+    class Revision extends Node {
         +message : String
         +author : String
         +date : DateTime
@@ -36,47 +33,53 @@
         +committerDate : DateTime
     }
     Revision "*" o-- "1" Directory
-    Directory "*" o-- "*" Revision
 
-    class Release {
-        +swhid : String
+    class Release extends Node{
         + date : DateTime
         + author : String
         + name : String
         + message : String
     
     }
-    Revision "*" o-- "1" Release
+
+    Release "*" o-- "1" Revision
+
     class SnapshotBranch {
       + name : String
     }
-    SnapshotBranch "*" o-- "1" SnapshotChild
-    class Snapshot {
-    +swhid : String
+    class Snapshot extends Node{
     }
-    Snapshot "1" *-- "*" SnapshotBranch
+    Snapshot "*" o-- "*" Release
+    Snapshot "*" o-- "*" Revision
+
+    (Snapshot,Release) . SnapshotBranch
+    (Snapshot,Revision) . SnapshotBranch
+
     class OriginVisit {
        +visit : int
        +date : DateTime
        +originType : String
        +status : String
     }
-    OriginVisit "1" o-- "*" Snapshot
-    class Origin {
-        +swhid : String
+    class Origin extends Node {
         +origin : String
     }
-    Origin "1" *-- "*" OriginVisit
+    Origin "1" o-- "*" Snapshot
+    (Origin,Snapshot) . OriginVisit
 
-    SnapshotChild <|-- Release
 
-    SnapshotChild <|-- Revision
 
-    DirectoryChild <|-- Directory
-        DirectoryChild <|-- Revision
 
-    DirectoryChild <|-- Content
+Directory "*" o-- "*" Content
+Directory "*" o-- "*" Revision
+Directory "*" o-- "*" Directory
 
+
+
+
+(Directory, Content) . DirectoryEntry
+(Directory, Directory) . DirectoryEntry
+(Directory, Revision) . DirectoryEntry
 
 
 @enduml
