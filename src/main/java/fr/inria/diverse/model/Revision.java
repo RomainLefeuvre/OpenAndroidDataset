@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.Serializable;
 
 public class Revision extends Node implements Serializable {
+    private static final long serialVersionUID = 6380145784930210887L;
     private Long commitTimestamp;
 
     public Revision() {

@@ -105,6 +105,7 @@ public class FileFinder extends GraphExplorer<ArrayList<FileFinder.Result>> {
     }
 
     public static class DFSNode implements Serializable {
+        private static final long serialVersionUID = 8776327503975819239L;
         private String path;
         private Long id;
         private String swhid;
@@ -179,6 +180,7 @@ public class FileFinder extends GraphExplorer<ArrayList<FileFinder.Result>> {
 
 
     public static class Result implements Serializable {
+        private static final long serialVersionUID = 5298223080241324373L;
         private long originId;
         private String originUrl;
         private List<DFSNode> fileNodes;

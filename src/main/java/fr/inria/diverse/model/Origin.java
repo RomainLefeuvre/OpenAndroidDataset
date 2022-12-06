@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.Serializable;
 
 public class Origin extends Node implements Serializable {
+    private static final long serialVersionUID = -7579546333573935591L;
     static Logger logger = LogManager.getLogger(Snapshot.class);
 
     private Snapshot snapshot;

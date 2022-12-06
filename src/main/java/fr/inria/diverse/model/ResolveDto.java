@@ -8,6 +8,7 @@ import java.io.Serializable;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ResolveDto implements Serializable {
 
+    private static final long serialVersionUID = 2510115165923976380L;
     private String namespace;
     @JsonProperty("object_type")
     private String objectType;

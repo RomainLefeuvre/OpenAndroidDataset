@@ -8,6 +8,8 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 public class Branch implements Comparable<Branch>, Serializable {
+
+    private static final long serialVersionUID = 1735830627902451577L;
     static Logger logger = LogManager.getLogger(Snapshot.class);
     private BranchType type;
 
@@ -33,7 +35,7 @@ public class Branch implements Comparable<Branch>, Serializable {
         private final String text;
         private final Integer priority;
 
-        private BranchType(String text, int priority) {
+        BranchType(String text, int priority) {
             this.text = text;
             this.priority = priority;
         }

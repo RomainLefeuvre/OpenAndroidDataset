@@ -3,6 +3,7 @@ package fr.inria.diverse.model;
 import java.io.Serializable;
 
 public class Node implements Serializable {
+    private static final long serialVersionUID = -5583517045537897698L;
     long nodeId;
 
     public Node() {

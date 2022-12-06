@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.Serializable;
 
 public class Snapshot extends Node implements Serializable {
+    private static final long serialVersionUID = 2166967946176031738L;
     static Logger logger = LogManager.getLogger(Snapshot.class);
     private Branch branch;
     private Revision rev;
