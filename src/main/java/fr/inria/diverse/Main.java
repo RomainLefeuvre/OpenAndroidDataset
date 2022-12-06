@@ -26,30 +26,30 @@ public class Main {
             public void loadGraph() throws IOException {
                 this.graph = SwhUnidirectionalGraph.loadMapped(this.config.getGraphPath());
             }
-        };
+        };/*
         g.loadGraph();
 
         OriginFinder originFinder = new OriginFinder(g);
         originFinder.run();
-
+*/
         g = new Graph();
         g.loadGraph();
-
+/*
         logger.info("-----------LastOriginFinder Finder stage-----------");
 
         GraphExplorer lastOriginFinder = new LastOriginFinder(g);
         lastOriginFinder.run();
-
+*/
         logger.info("-----------File Finder stage-----------");
 
         GraphExplorer fileFinder = new FileFinder(g);
         fileFinder.run();
-
+/*
         logger.info("-----------Content Node Matching Name stage-----------");
 
         ContentNodeMatchingNameFinder f = new ContentNodeMatchingNameFinder(g);
         f.run();
-
+*/
     }
 
 

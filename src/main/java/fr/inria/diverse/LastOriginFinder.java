@@ -18,8 +18,7 @@ import java.util.*;
 
 public class LastOriginFinder extends GraphExplorer<ArrayList<Origin>> {
 
-    public static String rawExportPath = Configuration.getInstance()
-            .getExportPath() + "/LastOriginFinder/origins";
+
     public static String exportPath = Configuration.getInstance()
             .getExportPath() + "/LastOriginFinder/originsFiltered";
 
@@ -143,13 +142,6 @@ public class LastOriginFinder extends GraphExplorer<ArrayList<Origin>> {
         }
     }
 
-
-    @Override
-    public void exploreGraphNode(long size) throws InterruptedException {
-        super.exploreGraphNode(size);
-        //Save Also raw origin
-        ToolBox.exportObjectToJson(result, rawExportPath + ".json");
-    }
 
     @Override
     protected String getExportPath() {
