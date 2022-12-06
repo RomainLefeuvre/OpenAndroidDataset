@@ -10,12 +10,16 @@ public class Snapshot extends Node implements Serializable {
     static Logger logger = LogManager.getLogger(Snapshot.class);
     private Branch branch;
     private Revision rev;
-
+    public Snapshot(){
+      super();
+    }
     public Snapshot(String branch, long snapshotId, Revision rev) {
         super(snapshotId);
         this.branch = new Branch(branch);
         this.rev = rev;
     }
+
+
 
     public int compareTo(@NotNull Snapshot snapshot) {
         if (this.branch.compareTo(snapshot.branch) == 0) {

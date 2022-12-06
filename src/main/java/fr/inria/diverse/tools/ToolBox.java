@@ -1,6 +1,8 @@
 package fr.inria.diverse.tools;
 
 import com.google.gson.Gson;
+import org.softwareheritage.graph.SwhUnidirectionalGraph;
+import org.softwareheritage.graph.labels.DirEntry;
 
 import java.io.*;
 import java.lang.reflect.Type;
@@ -52,7 +54,7 @@ public class ToolBox {
             objectOutputStream.flush();
             objectOutputStream.close();
         } catch (IOException e) {
-            throw new RuntimeException("Error while serializing " + filename);
+            throw new RuntimeException("Error while serializing " + filename,e);
         }
     }
 
@@ -65,7 +67,7 @@ public class ToolBox {
             objectInputStream.close();
             return object;
         } catch (FileNotFoundException e) {
-            throw new RuntimeException("Error file not found while deserializing " + filename, e);
+            return null;
         } catch (Exception e) {
             throw new RuntimeException("Error while deserializing " + filename, e);
         }
@@ -78,4 +80,9 @@ public class ToolBox {
         if (!Files.exists(parentDir))
             Files.createDirectories(parentDir);
     }
+
+    public static String getFileName(DirEntry labelId, SwhUnidirectionalGraph graphCopy) {
+        return new String(graphCopy.getLabelName(labelId.filenameId));
+    }
+
 }

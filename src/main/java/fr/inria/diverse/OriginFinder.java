@@ -6,50 +6,28 @@ import org.softwareheritage.graph.SwhType;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 
 import java.util.ArrayList;
+import java.util.List;
 
-public class OriginFinder extends GraphExplorer {
-
-    public static String exportPath = Configuration.getInstance()
-            .getExportPath() + "/OriginFinder/origins";
-    private final ArrayList<Long> origins = new ArrayList<>();
+public class OriginFinder extends GraphExplorer<ArrayList<Long>> {
+    public static String exportPath =Configuration.getInstance()
+            .getExportPath()+"/OriginFinder/origins";
 
     public OriginFinder(Graph graph) {
         super(graph);
+        this.result=new ArrayList<>();
     }
 
-
     @Override
-    void exploreGraphNodeAction(long currentNodeId, SwhUnidirectionalGraph graphCopy) {
+    protected void exploreGraphNodeAction(long currentNodeId, SwhUnidirectionalGraph graphCopy) {
         if (graphCopy.getNodeType(currentNodeId) == SwhType.ORI) {
-            synchronized (origins) {
-                origins.add(currentNodeId);
+            synchronized (result) {
+                result.add(currentNodeId);
             }
         }
     }
-
     @Override
-    void exploreGraphNodeCheckpointAction() {
-        synchronized (origins) {
-            ToolBox.exportObjectToJson(origins, exportPath + ".json");
-        }
-    }
-
-    @Override
-    public void exploreGraphNode(long size) throws InterruptedException {
-        super.exploreGraphNode(size);
-        //Add final save
-        ToolBox.exportObjectToJson(origins, exportPath + ".json");
-
-    }
-
-    @Override
-    void run() {
-        try {
-            this.exploreGraphNode(graph.getGraph().numNodes());
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error", e);
-        }
+    protected String getExportPath() {
+        return  exportPath;
     }
 
 }

@@ -8,40 +8,40 @@ import org.softwareheritage.graph.SwhType;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 import org.softwareheritage.graph.labels.DirEntry;
 
-import java.io.IOException;
+import java.io.Serializable;
 import java.util.*;
 
-public class FileFinder extends GraphExplorer {
+public class FileFinder extends GraphExplorer<ArrayList<FileFinder.Result>> {
     public static String exportPath = Configuration.getInstance()
-            .getExportPath() + "/FileFinder/result.json";
+            .getExportPath() + "/FileFinder/result";
 
-    final List<Result> results = new ArrayList<>();
-    List<Origin> origins;
+    //Input from LastOriginFinder
+    private List<Origin> origins;
 
     public FileFinder(Graph graph) {
         super(graph);
+        this.result=new ArrayList<>();
+        logger.info("Loading origins");
+        this.origins = ToolBox.deserialize(LastOriginFinder.exportPath);
+        if(this.origins==null){
+            throw new RuntimeException("No origins");
+        }
     }
 
 
     @Override
-    void exploreGraphNodeAction(long currentNodeId, SwhUnidirectionalGraph graphCopy) {
+    protected void exploreGraphNodeAction(long currentNodeId, SwhUnidirectionalGraph graphCopy) {
         findTargetedNode(origins.get((int) currentNodeId), graphCopy);
     }
 
     @Override
-    void exploreGraphNodeCheckpointAction() {
-        synchronized (results) {
-            ToolBox.exportObjectToJson(results, exportPath);
-        }
+    protected String getExportPath() {
+        return exportPath;
     }
-
     @Override
     public void exploreGraphNode(long size) throws InterruptedException {
         super.exploreGraphNode(size);
-        logger.info("Number of file node matching name found : " + results.size());
-
-        //Add final save
-        ToolBox.exportObjectToJson(results, exportPath);
+        logger.info("Number of file node matching name found : " + result.size());
     }
 
     /**
@@ -70,10 +70,10 @@ public class FileFinder extends GraphExplorer {
                         //Labels is a list since in the same folder you can have files with different names but with the same content.
                         final DirEntry[] labels = (DirEntry[]) it.label().get();
                         labelsContainsTargetedFileName = Arrays.stream(labels)
-                                .anyMatch(l -> getFileName(l, graphCopy).equals(this.config.getTargetedFileName()));
+                                .anyMatch(l -> ToolBox.getFileName(l, graphCopy).equals(this.config.getTargetedFileName()));
                         //If labelsContainsTargetedFileName we take the targeted label, else we get the first one, it does not matter in our case;
                         label = labelsContainsTargetedFileName ? this.config.getTargetedFileName() :
-                                (labels.length > 0 ? getFileName(labels[0], graphCopy) : "");
+                                (labels.length > 0 ? ToolBox.getFileName(labels[0], graphCopy) : "");
                     }
 
                     if (!visited.contains(neighborNodeId)) {
@@ -84,45 +84,38 @@ public class FileFinder extends GraphExplorer {
                         if (neighborType == SwhType.CNT && labelsContainsTargetedFileName) {
                             logger.debug("It's a match, finding file node having requested filename " + neighborNode.getId());
                             res.add(neighborNode);
-
                         }
                     }
                 }
             }
         }
         if (res.size() > 0) {
-            synchronized (results) {
-                this.results.add(new Result(originNode.getNodeId(), originNode.getOriginUrl(), res));
+            synchronized (result) {
+                this.result.add(new Result(originNode.getNodeId(), originNode.getOriginUrl(), res,this.graph));
             }
         }
     }
 
-    private String getFileName(DirEntry labelId, SwhUnidirectionalGraph graphCopy) {
-        return new String(graphCopy.getLabelName(labelId.filenameId));
-    }
 
     @Override
-    void run() throws InterruptedException, IOException {
-        try {
-            logger.info("Loading origins");
-            this.origins = ToolBox.deserialize(LastOriginFinder.exportPath);
-            this.exploreGraphNode(this.origins.size());
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error", e);
-        }
+    void run() throws InterruptedException {
+        this.restoreCheckpoint();
+        this.exploreGraphNode(this.origins.size());
     }
 
-    public static class DFSNode {
+    public static class DFSNode implements Serializable {
         private String path;
-        private long id;
+        private Long id;
         private String swhid;
+        public DFSNode(){
 
+        }
         public DFSNode(long id) {
             this.path = "/";
             this.id = id;
             this.swhid = "";
         }
+
 
         public DFSNode(DFSNode node) {
             this.path = node.getPath();
@@ -137,12 +130,12 @@ public class FileFinder extends GraphExplorer {
 
             DFSNode dfsNode = (DFSNode) o;
 
-            return id == dfsNode.id;
+            return id != null ? id.equals(dfsNode.id) : dfsNode.id == null;
         }
 
         @Override
         public int hashCode() {
-            return (int) (id ^ (id >>> 32));
+            return id != null ? id.hashCode() : 0;
         }
 
         public long getId() {
@@ -173,15 +166,26 @@ public class FileFinder extends GraphExplorer {
             this.swhid = swhid;
         }
 
+        public void setPath(String path) {
+            this.path = path;
+        }
+
+        public void setId(Long id) {
+            this.id = id;
+        }
+
     }
 
 
-    public class Result {
+    public static class Result implements Serializable {
         private long originId;
         private String originUrl;
         private List<DFSNode> fileNodes;
 
-        public Result(long originId, String originUrl, List<DFSNode> fileNodes) {
+        public Result(){
+
+        }
+        public Result(long originId, String originUrl, List<DFSNode> fileNodes,Graph graph) {
             this.originId = originId;
             this.originUrl = originUrl;
             this.fileNodes = fileNodes;
@@ -189,6 +193,7 @@ public class FileFinder extends GraphExplorer {
                 node.setSwhid(graph.getGraph().getSWHID(node.getId()).toString());
             }
         }
+
 
         public long getOriginId() {
             return originId;
@@ -213,6 +218,7 @@ public class FileFinder extends GraphExplorer {
         public void setFileNodes(List<DFSNode> fileNodes) {
             this.fileNodes = fileNodes;
         }
+
     }
 
 

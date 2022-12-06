@@ -8,7 +8,7 @@ public class Revision extends Node implements Serializable {
     private Long commitTimestamp;
 
     public Revision() {
-
+        super();
     }
 
     public Revision(long nodeId, long commitTimestamp) {

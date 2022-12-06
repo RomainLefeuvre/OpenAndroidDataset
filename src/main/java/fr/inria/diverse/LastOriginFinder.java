@@ -15,19 +15,20 @@ import org.softwareheritage.graph.labels.DirEntry;
 
 import java.lang.reflect.Type;
 import java.util.*;
-import java.util.stream.Collectors;
 
-public class LastOriginFinder extends GraphExplorer {
+public class LastOriginFinder extends GraphExplorer<ArrayList<Origin>> {
 
     public static String rawExportPath = Configuration.getInstance()
             .getExportPath() + "/LastOriginFinder/origins";
     public static String exportPath = Configuration.getInstance()
             .getExportPath() + "/LastOriginFinder/originsFiltered";
-    private final List<Origin> origins = new LinkedList<>();
+
+    //Input from OriginFinder
     private final List<Long> originNodeIds;
 
     public LastOriginFinder(Graph graph) {
         super(graph);
+        this.result=new ArrayList<>();
         Type listType = new TypeToken<ArrayList<Long>>() {
         }.getType();
         this.originNodeIds = ToolBox.loadJsonObject(OriginFinder.exportPath + ".json", listType);
@@ -35,8 +36,9 @@ public class LastOriginFinder extends GraphExplorer {
     }
 
     /**
-     * Get the last snapshot for a given origin, the result is saved in the snaphsot attribute of the origin passed in parameter
-     *
+     * Get the last revision of a main branch for a given origin. A partial model (Origin,Snapshot,Branch ..) is used and
+     * located in the model package.
+     * The result is saved in the snapshot attribute of the OriginNode passed in parameter
      * @param originNode the origin node we want to process
      * @param graphCopy  the current graphCopy (thread safe approach)
      */
@@ -123,7 +125,7 @@ public class LastOriginFinder extends GraphExplorer {
     }
 
     @Override
-    void exploreGraphNodeAction(long i, SwhUnidirectionalGraph graphCopy) {
+    protected void exploreGraphNodeAction(long i, SwhUnidirectionalGraph graphCopy) {
         long currentNodeId = this.originNodeIds.get((int) i);
         if (graphCopy.getNodeType(currentNodeId) == SwhType.ORI) {
             String originUrl = graphCopy.getUrl(currentNodeId);
@@ -134,34 +136,29 @@ public class LastOriginFinder extends GraphExplorer {
                 Origin currentOrigin = new Origin(originUrl, currentNodeId);
                 findLastSnap(currentOrigin, graphCopy.copy());
                 if (currentOrigin.getSnapshot() != null)
-                    synchronized (origins) {
-                        origins.add(currentOrigin);
+                    synchronized (result) {
+                        result.add(currentOrigin);
                     }
             }
         }
     }
 
-    @Override
-    void exploreGraphNodeCheckpointAction() {
-        synchronized (origins) {
-            ToolBox.serialize(origins, exportPath);
-        }
-    }
 
     @Override
     public void exploreGraphNode(long size) throws InterruptedException {
         super.exploreGraphNode(size);
-        //Add final save
-        ToolBox.serialize(origins, exportPath);
-
-        ToolBox.exportObjectToJson(origins, rawExportPath + ".json");
-        ToolBox.exportObjectToJson(origins.stream().filter(origin -> origin.getSnapshot() != null)
-                .collect(Collectors.toList()), exportPath + ".json");
+        //Save Also raw origin
+        ToolBox.exportObjectToJson(result, rawExportPath + ".json");
     }
 
     @Override
+    protected String getExportPath() {
+        return LastOriginFinder.exportPath;
+    }
+    @Override
     void run() {
         try {
+            this.restoreCheckpoint();
             this.exploreGraphNode(this.originNodeIds.size());
         } catch (Exception e) {
             e.printStackTrace();

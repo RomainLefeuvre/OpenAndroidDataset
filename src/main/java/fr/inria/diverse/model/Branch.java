@@ -11,6 +11,10 @@ public class Branch implements Comparable<Branch>, Serializable {
     static Logger logger = LogManager.getLogger(Snapshot.class);
     private BranchType type;
 
+    public Branch() {
+        super();
+    }
+
     public Branch(String branchType) {
         this.type = BranchType.findBranchType(branchType);
     }
