@@ -3,20 +3,13 @@
     interface SnapshotChild
     interface DirectoryChild
 
-    class ContentHashes {
-       + blake2s256 : String
-       + sha1 : String
-       + sha1_git : String
-       + sha256 : String
-    
-    }
+
     class Content {
         + swhid : String
         + length : String
         + status : String
     
     }
-    Content "1" *-- "1" ContentHashes
     class Directory {
         +swhid : String
     }
@@ -26,7 +19,7 @@
         + name : String
 
     }
-    DirectoryEntry "*" o-- "1" DirectoryChild
+    DirectoryEntry "*" --> "1" DirectoryChild
     class Revision {
         +swhid : String
         +message : String
@@ -35,8 +28,7 @@
         +committer : String
         +committerDate : DateTime
     }
-    Revision "*" o-- "1" Directory
-    Directory "*" o-- "*" Revision
+    Revision "*" --> "1" Directory
 
     class Release {
         +swhid : String
@@ -46,27 +38,21 @@
         + message : String
     
     }
-    Revision "*" o-- "1" Release
+    Revision "*" <-- "1" Release
     class SnapshotBranch {
       + name : String
     }
-    SnapshotBranch "*" o-- "1" SnapshotChild
+    SnapshotBranch "*" --> "1" SnapshotChild
     class Snapshot {
     +swhid : String
     }
     Snapshot "1" *-- "*" SnapshotBranch
-    class OriginVisit {
-       +visit : int
-       +date : DateTime
-       +originType : String
-       +status : String
-    }
-    OriginVisit "1" o-- "*" Snapshot
+
     class Origin {
         +swhid : String
         +origin : String
     }
-    Origin "1" *-- "*" OriginVisit
+    Origin "*" --> "*" Snapshot
 
     SnapshotChild <|-- Release
 

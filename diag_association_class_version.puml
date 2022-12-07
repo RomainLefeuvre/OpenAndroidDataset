@@ -6,19 +6,11 @@
 
 
 
-    class ContentHashes {
-       + blake2s256 : String
-       + sha1 : String
-       + sha1_git : String
-       + sha256 : String
-    
-    }
     class Content extends Node{
         + length : String
         + status : String
     
     }
-    Content "1" *-- "1" ContentHashes
     class Directory extends Node {
     }
 
@@ -32,7 +24,7 @@
         +committer : String
         +committerDate : DateTime
     }
-    Revision "*" o-- "1" Directory
+    Revision "*" --> "1" Directory
 
     class Release extends Node{
         + date : DateTime
@@ -42,37 +34,31 @@
     
     }
 
-    Release "*" o-- "1" Revision
+    Release "*" --> "1" Revision
 
     class SnapshotBranch {
       + name : String
     }
     class Snapshot extends Node{
     }
-    Snapshot "*" o-- "*" Release
-    Snapshot "*" o-- "*" Revision
+    Snapshot "*" --> "*" Release
+    Snapshot "*" --> "*" Revision
 
     (Snapshot,Release) . SnapshotBranch
     (Snapshot,Revision) . SnapshotBranch
 
-    class OriginVisit {
-       +visit : int
-       +date : DateTime
-       +originType : String
-       +status : String
-    }
+
     class Origin extends Node {
         +origin : String
     }
-    Origin "1" o-- "*" Snapshot
-    (Origin,Snapshot) . OriginVisit
+    Origin "*" --> "*" Snapshot
 
 
 
 
-Directory "*" o-- "*" Content
-Directory "*" o-- "*" Revision
-Directory "*" o-- "*" Directory
+Directory "*" --> "*" Content
+Directory "*" --> "*" Revision
+Directory "*" --> "*" Directory
 
 
 
