@@ -1,5 +1,6 @@
 package fr.inria.diverse;
 
+import com.google.common.reflect.TypeToken;
 import fr.inria.diverse.model.Origin;
 import fr.inria.diverse.tools.Configuration;
 import fr.inria.diverse.tools.ToolBox;
@@ -9,6 +10,7 @@ import org.softwareheritage.graph.SwhUnidirectionalGraph;
 import org.softwareheritage.graph.labels.DirEntry;
 
 import java.io.Serializable;
+import java.lang.reflect.Type;
 import java.util.*;
 
 public class FileFinder extends GraphExplorer<ArrayList<FileFinder.Result>> {
@@ -22,9 +24,18 @@ public class FileFinder extends GraphExplorer<ArrayList<FileFinder.Result>> {
         super(graph);
         this.result=new ArrayList<>();
         logger.info("Loading origins");
+
         this.origins = ToolBox.deserialize(LastOriginFinder.exportPath);
         if(this.origins==null){
-            throw new RuntimeException("No origins");
+            logger.info("Java Serialize Input not detected, try to load json version");
+            Type listType = new TypeToken<ArrayList<Origin>>() {
+            }.getType();
+            this.origins = ToolBox.loadJsonObject(LastOriginFinder.exportPath+".json",listType);
+            if(this.origins==null){
+                throw new RuntimeException("No origins");
+            }else{
+                logger.info("Result from Last origin Finder successfully loaded");
+            }
         }
     }
 
