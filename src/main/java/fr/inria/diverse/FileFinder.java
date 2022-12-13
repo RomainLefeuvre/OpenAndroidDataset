@@ -4,6 +4,7 @@ import com.google.common.reflect.TypeToken;
 import fr.inria.diverse.model.Origin;
 import fr.inria.diverse.tools.Configuration;
 import fr.inria.diverse.tools.ToolBox;
+import it.unimi.dsi.big.webgraph.LazyLongIterator;
 import it.unimi.dsi.big.webgraph.labelling.ArcLabelledNodeIterator;
 import org.softwareheritage.graph.SwhType;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
@@ -12,6 +13,7 @@ import org.softwareheritage.graph.labels.DirEntry;
 import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class FileFinder extends GraphExplorer<ArrayList<FileFinder.Result>> {
     public static String exportPath = Configuration.getInstance()
@@ -19,14 +21,21 @@ public class FileFinder extends GraphExplorer<ArrayList<FileFinder.Result>> {
 
     //Input from LastOriginFinder
     private List<Origin> origins;
-
+    //Input from ContentNodeMatchingNameFinder
+    //Todo find a way to store it efficiently ie. with bit vector, bloom filter with perfect hash function etc ...
+    //Determine if it's not over-kill...
+    private Set<Long> matchingNode=new HashSet<>();
     public FileFinder(Graph graph) {
         super(graph);
-        this.result=new ArrayList<>();
+        this.result = new ArrayList<>();
         logger.info("Loading origins");
 
         this.origins = ToolBox.deserialize(LastOriginFinder.exportPath);
-        if(this.origins==null){
+        ArrayList<Long> matchingNodeList = ToolBox.deserialize(ContentNodeMatchingNameFinder.exportPath);
+        matchingNode.addAll(matchingNodeList);
+        if(matchingNode.size()==0)
+            throw new RuntimeException("No matching node list");
+        if (this.origins == null) {
             logger.info("Java Serialize Input not detected, try to load json version");
             Type listType = new TypeToken<ArrayList<Origin>>() {
             }.getType();
@@ -36,7 +45,10 @@ public class FileFinder extends GraphExplorer<ArrayList<FileFinder.Result>> {
             }else{
                 logger.info("Result from Last origin Finder successfully loaded");
             }
+
         }
+        logger.info("Input successfully loaded!");
+
     }
 
 
@@ -49,6 +61,7 @@ public class FileFinder extends GraphExplorer<ArrayList<FileFinder.Result>> {
     protected String getExportPath() {
         return exportPath;
     }
+
     @Override
     public void exploreGraphNode(long size) throws InterruptedException {
         super.exploreGraphNode(size);
@@ -69,30 +82,21 @@ public class FileFinder extends GraphExplorer<ArrayList<FileFinder.Result>> {
         List<DFSNode> res = new LinkedList<>();
         while (!stack.isEmpty()) {
             currentNode = stack.pop();
-            ArcLabelledNodeIterator.LabelledArcIterator it = graphCopy.labelledSuccessors(currentNode.getId());
+            LazyLongIterator it = graphCopy.successors(currentNode.getId());
             for (long neighborNodeId; (neighborNodeId = it.nextLong()) != -1; ) {
                 SwhType neighborType = graphCopy.getNodeType(neighborNodeId);
                 //Each revision point to the directory tree and an ordered list of all its parent ...
                 //Let's check if it is a CNT or DIR node
                 if (neighborType == SwhType.CNT || neighborType == SwhType.DIR) {
-                    String label = "";
-                    boolean labelsContainsTargetedFileName = false;
-                    if (neighborType == SwhType.CNT) {
-                        //Labels is a list since in the same folder you can have files with different names but with the same content.
-                        final DirEntry[] labels = (DirEntry[]) it.label().get();
-                        labelsContainsTargetedFileName = Arrays.stream(labels)
-                                .anyMatch(l -> ToolBox.getFileName(l, graphCopy).equals(this.config.getTargetedFileName()));
-                        //If labelsContainsTargetedFileName we take the targeted label, else we get the first one, it does not matter in our case;
-                        label = labelsContainsTargetedFileName ? this.config.getTargetedFileName() :
-                                (labels.length > 0 ? ToolBox.getFileName(labels[0], graphCopy) : "");
-                    }
+                    boolean labelsContainsTargetedFileName = neighborType == SwhType.CNT && this.matchingNode.contains(neighborNodeId);
+                    String label = labelsContainsTargetedFileName?this.config.getTargetedFileName():"";
 
                     if (!visited.contains(neighborNodeId)) {
                         DFSNode neighborNode = currentNode.createChild(neighborNodeId, label);
                         stack.push(neighborNode);
                         visited.add(neighborNodeId);
                         //Let's check if it's an interesting node ...
-                        if (neighborType == SwhType.CNT && labelsContainsTargetedFileName) {
+                        if (neighborType == SwhType.CNT && label.equals(this.config.getTargetedFileName())) {
                             logger.debug("It's a match, finding file node having requested filename " + neighborNode.getId());
                             res.add(neighborNode);
                         }
@@ -102,17 +106,17 @@ public class FileFinder extends GraphExplorer<ArrayList<FileFinder.Result>> {
         }
         if (res.size() > 0) {
             synchronized (result) {
-                this.result.add(new Result(originNode.getNodeId(), originNode.getOriginUrl(), res,this.graph));
+                this.result.add(new Result(originNode.getNodeId(), originNode.getOriginUrl(), res, this.graph));
             }
         }
     }
-
 
 
     @Override
     void run() throws InterruptedException {
         this.restoreCheckpoint();
         this.exploreGraphNode(this.origins.size());
+        logger.info(this.result.size()+" results");
     }
 
     public static class DFSNode implements Serializable {
@@ -120,9 +124,11 @@ public class FileFinder extends GraphExplorer<ArrayList<FileFinder.Result>> {
         private String path;
         private Long id;
         private String swhid;
-        public DFSNode(){
+
+        public DFSNode() {
 
         }
+
         public DFSNode(long id) {
             this.path = "/";
             this.id = id;
@@ -196,10 +202,11 @@ public class FileFinder extends GraphExplorer<ArrayList<FileFinder.Result>> {
         private String originUrl;
         private List<DFSNode> fileNodes;
 
-        public Result(){
+        public Result() {
 
         }
-        public Result(long originId, String originUrl, List<DFSNode> fileNodes,Graph graph) {
+
+        public Result(long originId, String originUrl, List<DFSNode> fileNodes, Graph graph) {
             this.originId = originId;
             this.originUrl = originUrl;
             this.fileNodes = fileNodes;

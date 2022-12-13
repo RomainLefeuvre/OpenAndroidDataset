@@ -28,7 +28,7 @@ public class ContentNodeMatchingNameFinder extends GraphExplorer<ArrayList<Long>
                             .anyMatch(l -> getFileName(l, graphCopy).equals(this.config.getTargetedFileName()));
                     if (labelsContainsTargetedFileName) {
                         synchronized (result) {
-                            result.add(currentNodeId);
+                            result.add(sucessorNodeId);
                         }
                     }
                 }
