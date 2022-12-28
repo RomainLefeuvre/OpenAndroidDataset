@@ -41,17 +41,8 @@ public class Main {
         lastOriginFinder.run();
 
 */
-        logger.info("-----------Content Node Matching Name stage-----------");
 
-        ContentNodeMatchingNameFinder f = new ContentNodeMatchingNameFinder(g);
-        f.run();
-        logger.info("-----------File Finder stage-----------");
 
-        GraphExplorer fileFinder = new FileFinder(g);
-        fileFinder.run();
-/*
-
-*/
     }
 
 

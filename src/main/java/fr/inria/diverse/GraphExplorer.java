@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -30,11 +32,12 @@ public abstract class GraphExplorer<T extends Serializable> {
     //A counter to keep the index of the exploration
     protected AtomicLong counter;
     //The result of the exploration that will be exported
-    protected T result;
+    protected ArrayList<T> result;
 
 
     //Nb: you are responsible to properly initialize the result attribute in your subClass
     public GraphExplorer(Graph graph) {
+        this.result=new ArrayList<>();
         this.graph = graph;
         this.checkpointSynchro = new Semaphore(this.config.getThreadNumber());
         this.counter = new AtomicLong(-1);
@@ -51,7 +54,7 @@ public abstract class GraphExplorer<T extends Serializable> {
      *
      * @throws InterruptedException
      */
-    protected void exploreGraphNode(long size) throws InterruptedException {
+    protected List<T> exploreGraphNode(long size) throws InterruptedException {
         Executor executor = new Executor(this.config.getThreadNumber());
         logger.info("Num of action to do : " + size);
         for (int thread = 0; thread < this.config.getThreadNumber(); thread++) {
@@ -90,6 +93,7 @@ public abstract class GraphExplorer<T extends Serializable> {
         logger.info("Exploration done, all thread have ended, final checkpoint");
         this.exploreGraphNodeCheckpointAction();
         ToolBox.exportObjectToJson(this.result, this.getExportPath() + ".json");
+        return result;
     }
 
     /**
@@ -100,7 +104,7 @@ public abstract class GraphExplorer<T extends Serializable> {
      * @param index     the current action index (can be a nodeId)
      * @param graphCopy the current graphCopy (thread safe approach)
      */
-    protected abstract void exploreGraphNodeAction(long index, SwhUnidirectionalGraph graphCopy);
+    protected abstract  void exploreGraphNodeAction(long index, SwhUnidirectionalGraph graphCopy);
 
     /**
      * Function called peridically by exploreGraphNode to perform partial backups
@@ -118,7 +122,7 @@ public abstract class GraphExplorer<T extends Serializable> {
      */
     protected void restoreCheckpoint() {
         //Try to restore previous partial experiment
-        T checkpointResult = ToolBox.deserialize(this.getExportPath());
+        ArrayList<T> checkpointResult = ToolBox.deserialize(this.getExportPath());
         AtomicLong checkpointCounter = ToolBox.deserialize(this.getExportCounterPath());
         if (checkpointCounter == null || checkpointCounter.get() == 0 || checkpointResult == null) {
             logger.info("No checkpoint to restart from");
@@ -133,7 +137,7 @@ public abstract class GraphExplorer<T extends Serializable> {
         return this.getExportPath() + "_state";
     }
 
-    void run() throws InterruptedException, IOException {
+    public void run() throws InterruptedException, IOException {
         try {
             this.restoreCheckpoint();
             this.exploreGraphNode(graph.getGraph().numNodes());

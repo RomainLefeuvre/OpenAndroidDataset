@@ -8,13 +8,12 @@ import org.softwareheritage.graph.SwhUnidirectionalGraph;
 import java.util.ArrayList;
 import java.util.List;
 
-public class OriginFinder extends GraphExplorer<ArrayList<Long>> {
+public class OriginFinder extends GraphExplorer<Long> {
     public static String exportPath =Configuration.getInstance()
             .getExportPath()+"/OriginFinder/origins";
 
     public OriginFinder(Graph graph) {
         super(graph);
-        this.result=new ArrayList<>();
     }
 
     @Override
