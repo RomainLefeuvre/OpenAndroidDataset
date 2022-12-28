@@ -17,6 +17,9 @@ public class Origin extends Node implements Serializable {
     private List<OriginVisit> originVisit;
     private String originUrl;
 
+    public Origin() {
+    }
+
     public Origin(long nodeId, SwhUnidirectionalGraph g) {
         super(nodeId,g);
         this.originUrl = originUrl;
@@ -24,11 +27,12 @@ public class Origin extends Node implements Serializable {
 
     public List<OriginVisit> getOriginVisit() {
 
-        if(originVisit==null){
-            this.originVisit=new ArrayList<>();
+        if(originVisit==null) {
+            this.originVisit = new ArrayList<>();
             LazyLongIterator it = this.getGraph().copy().successors(this.getNodeId());
-
-
+            for (long childId; (childId = it.nextLong()) != -1; ) {
+                originVisit.add(new OriginVisit(new Snapshot(childId, this.getGraph())));
+            }
         }
         //Todo Restore it from a file
         return originVisit;

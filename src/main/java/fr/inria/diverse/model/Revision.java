@@ -10,7 +10,12 @@ public class Revision extends Node implements Serializable {
     private Long commiterTimestamp;
     private Revision parent;
 
+    public Revision() {
+    }
 
+    public Revision(Long commiterTimestamp) {
+        this.commiterTimestamp = commiterTimestamp;
+    }
 
     public Revision(long nodeId, SwhUnidirectionalGraph g, long commitTimestamp) {
         super(nodeId,g);

@@ -16,6 +16,9 @@ public class Snapshot extends Node implements Serializable {
     static Logger logger = LogManager.getLogger(Snapshot.class);
     private List<SnapshotBranch> branch;
 
+    public Snapshot() {
+    }
+
     public Snapshot(long nodeId, SwhUnidirectionalGraph g) {
         super(nodeId, g);
     }
@@ -26,12 +29,12 @@ public class Snapshot extends Node implements Serializable {
             ArcLabelledNodeIterator.LabelledArcIterator it = this.getGraph().copy()
                     .labelledSuccessors(this.getNodeId());
             for (long snapChildId; (snapChildId = it.nextLong()) != -1; ) {
-
                 final DirEntry[] labels = (DirEntry[]) it.label().get();
                 DirEntry label = labels[0];
-                String url = new String(this.getGraph().getLabelName(label.filenameId));
-                String branchName = url.replace("refs/heads/", "");
+                String branchName = new String(this.getGraph().getLabelName(label.filenameId));
+                //String branchName = url.replace("refs/heads/", "");
                 this.branch.add(new SnapshotBranch(branchName, snapChildId));
+
             }
         }
         return branch;

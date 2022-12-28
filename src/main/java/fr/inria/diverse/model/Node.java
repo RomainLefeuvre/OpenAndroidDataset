@@ -11,6 +11,8 @@ public class Node implements Serializable {
     private SwhUnidirectionalGraph graph;
 
 
+    public Node() {
+    }
 
     public Node(long nodeId, SwhUnidirectionalGraph g) {
         this.graph=g;

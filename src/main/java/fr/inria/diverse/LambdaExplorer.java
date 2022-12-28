@@ -1,38 +1,65 @@
 package fr.inria.diverse;
 
 import fr.inria.diverse.model.Origin;
+import fr.inria.diverse.tools.Configuration;
 import it.unimi.dsi.big.webgraph.ImmutableGraph;
 import it.unimi.dsi.big.webgraph.LazyLongIterator;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.ParameterizedType;
 import java.util.*;
 
-public class LambdaExplorer extends GraphExplorer<Origin>{
-    protected Action<Origin> exploreGraphNodeAction;
-    protected List<Origin> inputs;
-    public LambdaExplorer(Graph graph,Action<Origin> a) {
+public abstract class LambdaExplorer<Input,Output extends Serializable> extends GraphExplorer<Output>{
+    protected List<Input> inputs;
+    public LambdaExplorer(Graph graph) {
         super(graph);
-        this.exploreGraphNodeAction = a;
     }
 
-    public LambdaExplorer(Graph graph, Action<Origin> a , List<Origin> inputs){
-        this(graph,a);
+
+
+    public LambdaExplorer(Graph graph, List<Input> inputs){
+        super(graph);
         this.inputs=inputs;
     }
 
-    protected  void exploreGraphNodeAction(long index, SwhUnidirectionalGraph graphCopy){
-        this.exploreGraphNodeAction.exploreGraphNodeAction(index,graphCopy,this.result);
+    private Class<Input> getParameterClass() {
+        return (Class<Input>) ((ParameterizedType) getClass()
+                .getGenericSuperclass()).getActualTypeArguments()[0];
     }
 
     @Override
+    protected void exploreGraphNodeAction(long index, SwhUnidirectionalGraph graphCopy) {
+        if(inputs!=null){
+            //ToDo Fix it to work with big inputs, here it's cat to an int ..
+            exploreGraphNodeActionOnElement(inputs.get((int) index),graphCopy);
+        }else if(getParameterClass().equals(Long.class)){
+            exploreGraphNodeActionOnElement((Input) new Long(index),graphCopy);
+        }
+
+    }
+    public abstract void exploreGraphNodeActionOnElement(Input currentElement, SwhUnidirectionalGraph graphCopy);
+
+    @Override
     protected String getExportPath() {
-        return "test";
+        String uuid = UUID.randomUUID().toString();
+        return Configuration.getInstance()
+                .getExportPath() +uuid+"/"+uuid;
     }
 
-    public List<Origin> explore() throws InterruptedException, IOException {
+    @Override
+    public void run() throws InterruptedException, IOException {
+        try {
+            this.exploreGraphNode(this.inputs!=null ?inputs.size():graph.getGraph().numNodes());
+        } catch (Exception e) {
+            logger.error("Error while running ",e);
+            throw new RuntimeException("Error", e);
+        }    }
+
+    public List<Output> explore() throws InterruptedException, IOException {
         this.run();
+        logger.info("found "+result.size()+" results");
         return result;
     }
 

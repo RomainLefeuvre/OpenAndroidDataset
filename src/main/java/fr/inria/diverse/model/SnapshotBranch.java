@@ -18,6 +18,9 @@ public class SnapshotBranch implements Serializable {
         return null;
     }
 
+    public SnapshotBranch() {
+    }
+
     public SnapshotBranch(String name, long childId) {
         this.name = name;
         this.childId = childId;
