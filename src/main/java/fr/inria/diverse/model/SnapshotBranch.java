@@ -2,28 +2,32 @@ package fr.inria.diverse.model;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
-import java.util.Arrays;
 
 public class SnapshotBranch implements Serializable {
 
     private static final long serialVersionUID = 1735830627902451577L;
     static Logger logger = LogManager.getLogger(SnapshotBranch.class);
     private String name;
-    private SnapshotChild child;
-    private long childId;
+    private ISnapshotChild child;
+
     public Revision getRevision(){
-        return null;
+        if(child instanceof Revision){
+            return (Revision) child;
+        }else if (child instanceof Release){
+            return ((Release) child).getRevision();
+        }else{
+            return null;
+        }
     }
 
     public SnapshotBranch() {
     }
 
-    public SnapshotBranch(String name, long childId) {
+    public SnapshotBranch(String name, ISnapshotChild child) {
         this.name = name;
-        this.childId = childId;
+        this.child = child;
     }
 
     public String getName() {
@@ -34,12 +38,11 @@ public class SnapshotBranch implements Serializable {
         this.name = name;
     }
 
-    public SnapshotChild getChild() {
-
+    public ISnapshotChild getChild() {
         return child;
     }
 
-    public void setChild(SnapshotChild child) {
+    public void setChild(ISnapshotChild child) {
         this.child = child;
     }
 }

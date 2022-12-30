@@ -14,7 +14,7 @@ public class Origin extends Node implements Serializable {
     private static final long serialVersionUID = -7579546333573935591L;
     static Logger logger = LogManager.getLogger(Origin.class);
 
-    private List<OriginVisit> originVisit;
+    private List<OriginVisit> originVisits;
     private String originUrl;
 
     public Origin() {
@@ -25,21 +25,21 @@ public class Origin extends Node implements Serializable {
         this.originUrl = originUrl;
     }
 
-    public List<OriginVisit> getOriginVisit() {
+    public List<OriginVisit> getOriginVisits() {
 
-        if(originVisit==null) {
-            this.originVisit = new ArrayList<>();
+        if(originVisits==null) {
+            this.originVisits = new ArrayList<>();
             LazyLongIterator it = this.getGraph().copy().successors(this.getNodeId());
             for (long childId; (childId = it.nextLong()) != -1; ) {
-                originVisit.add(new OriginVisit(new Snapshot(childId, this.getGraph())));
+                originVisits.add(new OriginVisit(new Snapshot(childId, this.getGraph())));
             }
         }
         //Todo Restore it from a file
-        return originVisit;
+        return originVisits;
     }
 
     public void setOriginVisit(List<OriginVisit> originVisit) {
-        this.originVisit = originVisit;
+        this.originVisits = originVisit;
     }
 
     public String getOriginUrl() {

@@ -1,4 +1,4 @@
 package fr.inria.diverse.model;
 
-public abstract class SnapshotChild{
+public interface ISnapshotChild extends INode{
 } // SnapshotChild

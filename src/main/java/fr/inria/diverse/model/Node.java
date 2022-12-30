@@ -5,9 +5,10 @@ import org.softwareheritage.graph.SwhUnidirectionalGraph;
 
 import java.io.Serializable;
 
-public class Node implements Serializable {
+public class Node implements Serializable, INode{
     private static final long serialVersionUID = -5583517045537897698L;
     private long nodeId;
+    private String swhid;
     private SwhUnidirectionalGraph graph;
 
 
@@ -18,6 +19,18 @@ public class Node implements Serializable {
         this.graph=g;
         this.nodeId = nodeId;
     }
+
+    public String getSwhid() {
+        if(swhid==null){
+            this.swhid= String.valueOf(this.graph.getSWHID(this.nodeId));
+        }
+        return swhid;
+    }
+
+    public void setSwhid(String swhid) {
+        this.swhid = swhid;
+    }
+
     public SwhUnidirectionalGraph getGraph() {
         return graph;
     }
