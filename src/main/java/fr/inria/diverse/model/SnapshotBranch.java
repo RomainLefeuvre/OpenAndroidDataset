@@ -11,13 +11,13 @@ public class SnapshotBranch implements Serializable {
     static Logger logger = LogManager.getLogger(SnapshotBranch.class);
     private String name;
     private ISnapshotChild child;
-
     public Revision getRevision(){
         if(child instanceof Revision){
             return (Revision) child;
         }else if (child instanceof Release){
             return ((Release) child).getRevision();
         }else{
+            logger.warn("No Revision for snapshot ");
             return null;
         }
     }

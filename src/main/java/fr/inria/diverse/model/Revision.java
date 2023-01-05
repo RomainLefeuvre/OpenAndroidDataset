@@ -4,7 +4,6 @@ import it.unimi.dsi.big.webgraph.LazyLongIterator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.softwareheritage.graph.SwhType;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 
 import java.io.Serializable;
@@ -14,17 +13,22 @@ public class Revision extends Node implements Serializable,ISnapshotChild,IDirec
     private Long commiterTimestamp;
     private Long timestamp;
     private String commiter;
-    private Revision parent;
-    private boolean noParent=false;
-    private IDirectoryChild tree;
+    //private Revision parent;
+   // private boolean noParent;
+   // private IDirectoryChild tree;
     private String message;
     private String author;
+    private Boolean isRootRevision;
     static Logger logger = LogManager.getLogger(Revision.class);
     public Revision() {
+        super();
     }
-
     public Revision(long nodeId, SwhUnidirectionalGraph g) {
+        this(nodeId,g,false);
+    }
+    public Revision(long nodeId, SwhUnidirectionalGraph g,Boolean isFirstRevision) {
         super(nodeId,g);
+        this.isRootRevision =isFirstRevision;
     }
 
     public int compareTo(@NotNull Revision rev) {
@@ -38,9 +42,6 @@ public class Revision extends Node implements Serializable,ISnapshotChild,IDirec
         return commiterTimestamp;
     }
 
-    public void setCommiterTimestamp(Long commiterTimestamp) {
-        this.commiterTimestamp = commiterTimestamp;
-    }
 
     public Long getTimestamp() {
         if(this.timestamp==null){
@@ -49,9 +50,6 @@ public class Revision extends Node implements Serializable,ISnapshotChild,IDirec
         return timestamp;
     }
 
-    public void setTimestamp(Long timestamp) {
-        this.timestamp = timestamp;
-    }
 
     public String getCommiter() {
         if(this.commiter==null){
@@ -60,38 +58,55 @@ public class Revision extends Node implements Serializable,ISnapshotChild,IDirec
         return commiter;
     }
 
-    public void setCommiter(String commiter) {
-        this.commiter = commiter;
-    }
-
+    /**
+     * Get the parent revision, in case of merge commit, return the first parent "The first parent is
+     * generally considered to be issued from the “main” branch that the revision is merged onto"
+     * Todo: handle in a best way merge commit
+     * @return
+     */
     public Revision getParent() {
-        if(parent==null&& !noParent){
+        //if(parent==null&& !noParent){
             LazyLongIterator childIt = (this.getGraph().copy())
                     .successors(this.getNodeId());
-            Long candidateNode = childIt.nextLong();
-            if(candidateNode!=-1&&this.getGraph().getNodeType(candidateNode)== SwhType.REV){
-
-            }else{
-                noParent=true;
-                if(candidateNode!=-1){
-                    //then it's not simply the first commit ...
-                    logger.warn("Error while retrieving parent with id "+candidateNode+"of node "+getNodeId());
+            Revision parent =null;
+            for (long successorNode; (successorNode = childIt.nextLong()) != -1 && parent==null;){
+                switch (this.getGraph().getNodeType(successorNode)){
+                    case REV:{
+                        parent=new Revision(successorNode,this.getGraph());
+                        break;
+                    }
                 }
             }
-        }
+            if(parent==null&&!isRootRevision){
+                    //then it's not simply the first commit ...
+                    logger.warn("No rev parent for revision "+this.getNodeId()+" "+this.getSwhid());
+            }
         return parent;
     }
 
-    public void setParent(Revision parent) {
-        this.parent = parent;
-    }
 
     public IDirectoryChild getTree() {
-        return tree;
-    }
-
-    public void setTree(IDirectoryChild tree) {
-        this.tree = tree;
+        LazyLongIterator childIt = (this.getGraph().copy())
+                .successors(this.getNodeId());
+        Long successorNode = childIt.nextLong();
+        Revision parent =null;
+        while(successorNode!=-1){
+            switch (this.getGraph().getNodeType(successorNode)){
+                case REV:{
+                    parent=new Revision(successorNode,this.getGraph());
+                    break;
+                }
+                case DIR: {
+                    logger.info("found the dir node");
+                    break;
+                }
+            }
+        }
+        if(parent==null){
+            //then it's not simply the first commit ...
+            logger.warn("Error while retrieving parent node of revision "+this.getNodeId());
+        }
+        return parent;
     }
 
     public String getMessage() {
@@ -101,18 +116,10 @@ public class Revision extends Node implements Serializable,ISnapshotChild,IDirec
         return message;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
     public String getAuthor() {
         if(this.author==null){
             this.author=""+this.getGraph().getAuthorId(this.getNodeId());
         }
         return author;
-    }
-
-    public void setAuthor(String author) {
-        this.author = author;
     }
 }

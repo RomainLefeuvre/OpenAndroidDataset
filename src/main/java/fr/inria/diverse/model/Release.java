@@ -18,6 +18,7 @@ public class Release extends Node implements ISnapshotChild{
 
     private Revision revision;
     public Release() {
+        super();
     }
 
     public Release(long nodeId, SwhUnidirectionalGraph g) {
@@ -45,7 +46,7 @@ public class Release extends Node implements ISnapshotChild{
                 .successors(this.getNodeId());
         Long candidateNodeId = childIt.nextLong();
         if(this.getGraph().getNodeType(candidateNodeId)== SwhType.REV){
-            this.revision= new Revision(candidateNodeId,this.getGraph());
+            this.revision= new Revision(candidateNodeId,this.getGraph(),true);
         }else{
             logger.warn("No revision Node for release node "+this.getNodeId());             
         }

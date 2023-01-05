@@ -11,6 +11,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.softwareheritage.graph.SwhType.*;
+
 public class Snapshot extends Node implements Serializable {
     private static final long serialVersionUID = 2166967946176031738L;
     static Logger logger = LogManager.getLogger(Snapshot.class);
@@ -36,10 +38,12 @@ public class Snapshot extends Node implements Serializable {
                 ISnapshotChild snapChild=null;
                 switch (this.getGraph().getNodeType(snapChildId)){
                     case REV:{
-                        snapChild=new Revision(snapChildId,this.getGraph());
+                        snapChild=new Revision(snapChildId,this.getGraph(),true);
+                        break;
                     }
                     case REL: {
                         snapChild=new Release(snapChildId,this.getGraph());
+                        break;
                     }
                 }
                 if (snapChild!=null){

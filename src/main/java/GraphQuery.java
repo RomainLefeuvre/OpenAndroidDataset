@@ -8,6 +8,7 @@ import org.softwareheritage.graph.SwhType;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 import fr.inria.diverse.tools.ToolBox;
 import java.io.IOException;
+import fr.inria.diverse.model.*;
 import java.util.*;
 
 public class GraphQuery {
@@ -25,16 +26,48 @@ public class GraphQuery {
             @Override
             public void exploreGraphNodeActionOnElement(Long currentElement, SwhUnidirectionalGraph graphCopy) {
                 Origin origin = new Origin(currentElement, graphCopy);
+                logger.info(origin.getOriginUrl()+" "+origin.getSwhid());
+                int max=0;
                 boolean predicateResult = origin.getOriginVisits().stream().anyMatch(originVisit ->
-                        originVisit.getSnapshot().getBranches().stream().anyMatch(branche ->
-                                branche.getName().equals("refs/heads/master")));
+                        originVisit.getSnapshot().getBranches().stream().anyMatch(branche ->{
+                            Set<Revision> ahahah =getParentRevisionClosure((new HashSet<Revision>(Arrays.asList(branche.getRevision()))));
+                            if(ahahah.size()==0){
+                                logger.info("error for "+branche.getName());
+                            }
+                            return ahahah.size()>10;
+                                })
+
+
+
+                );
                 if (predicateResult) {
+                    logger.info("ok");
+
                     result.add(currentElement);
                 }
             }
         }.explore();
         results.addAll(selectResult);
         return results;
+    }
+
+    public static Set<Revision> getParentRevisionClosure(Set<Revision> param ){
+        Stack<Revision> stack = new Stack<>();
+        HashSet<Revision> res = new HashSet<>();
+        stack.addAll(param);
+        res.addAll(param);
+        while(!stack.isEmpty()){
+            Revision current=stack.pop();
+            Set<Revision> children= new HashSet<Revision>(Arrays.asList(current.getParent()));
+            for(Revision child: children){
+                if(child!=null && !res.contains(child)){
+                    res.add(child);
+                    stack.add(child);
+                }
+            }
+
+        }
+        return res;
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {

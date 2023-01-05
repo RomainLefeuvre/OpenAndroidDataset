@@ -69,13 +69,15 @@ public abstract class GraphExplorer<T extends Serializable> {
                         timestamp = Instant.now();
                         logger.info("Doing action number " + i + " over " + size + " thread " + finalThread);
                     }
+
                     try {
                         this.checkpointSynchro.acquire();
                         this.exploreGraphNodeAction(i, graphCopy.copy());
-                        this.checkpointSynchro.release();
                     } catch (Throwable e) {
                         logger.error("Error catch for index " + i, e);
                     }
+                    this.checkpointSynchro.release();
+
 
                 }
             });
