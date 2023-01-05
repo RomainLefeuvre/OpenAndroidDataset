@@ -45,7 +45,8 @@ public class Revision extends Node implements Serializable,ISnapshotChild,IDirec
 
     public Long getTimestamp() {
         if(this.timestamp==null){
-            this.timestamp=this.getGraph().getAuthorTimestamp(this.getNodeId());
+            Long t =this.getGraph().getAuthorTimestamp(this.getNodeId());
+            this.timestamp= t==null?-1:t;
         }
         return timestamp;
     }
@@ -79,34 +80,32 @@ public class Revision extends Node implements Serializable,ISnapshotChild,IDirec
             }
             if(parent==null&&!isRootRevision){
                     //then it's not simply the first commit ...
-                    logger.warn("No rev parent for revision "+this.getNodeId()+" "+this.getSwhid());
+                    logger.debug("No rev parent for revision "+this.getNodeId()+" "+this.getSwhid());
             }
         return parent;
     }
 
 
-    public IDirectoryChild getTree() {
+    public Directory getTree() {
         LazyLongIterator childIt = (this.getGraph().copy())
                 .successors(this.getNodeId());
-        Long successorNode = childIt.nextLong();
-        Revision parent =null;
-        while(successorNode!=-1){
+        Directory tree =null;
+        for (long successorNode; (successorNode = childIt.nextLong()) != -1 && tree==null;){
             switch (this.getGraph().getNodeType(successorNode)){
-                case REV:{
-                    parent=new Revision(successorNode,this.getGraph());
+                case DIR:{
+                    tree=new Directory(successorNode,this.getGraph());
                     break;
-                }
-                case DIR: {
-                    logger.info("found the dir node");
+                }case CNT:{
+                    logger.warn("CNT node found");
                     break;
                 }
             }
         }
-        if(parent==null){
+        if(tree==null){
             //then it's not simply the first commit ...
-            logger.warn("Error while retrieving parent node of revision "+this.getNodeId());
+            logger.debug("No tree for revision "+this.getNodeId()+" "+this.getSwhid());
         }
-        return parent;
+        return tree;
     }
 
     public String getMessage() {

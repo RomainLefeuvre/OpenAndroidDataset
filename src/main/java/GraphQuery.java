@@ -26,23 +26,25 @@ public class GraphQuery {
             @Override
             public void exploreGraphNodeActionOnElement(Long currentElement, SwhUnidirectionalGraph graphCopy) {
                 Origin origin = new Origin(currentElement, graphCopy);
-                logger.info(origin.getOriginUrl()+" "+origin.getSwhid());
-                int max=0;
-                boolean predicateResult = origin.getOriginVisits().stream().anyMatch(originVisit ->
-                        originVisit.getSnapshot().getBranches().stream().anyMatch(branche ->{
-                            Set<Revision> ahahah =getParentRevisionClosure((new HashSet<Revision>(Arrays.asList(branche.getRevision()))));
-                            if(ahahah.size()==0){
-                                logger.info("error for "+branche.getName());
-                            }
-                            return ahahah.size()>10;
-                                })
-
-
-
-                );
+                boolean predicateResult = (origin.getOriginVisits().stream().allMatch(originVisit ->
+                        originVisit.getSnapshot().getBranches().stream().allMatch(branche ->
+                                getParentRevisionClosure((new HashSet<Revision>(Arrays.asList(branche.getRevision()))))
+                                        .stream().allMatch(closur ->
+                                                closur.getTimestamp() > (1420066800)
+                                        )
+                        )
+                ) &&
+                        origin.getOriginVisits().stream().anyMatch(originVisit ->
+                                originVisit.getSnapshot().getBranches().stream().anyMatch(branche ->
+                                        ((branche.getName().equals("refs/heads/master") ||
+                                                branche.getName().equals("refs/heads/main"))
+                                                &&
+                                                getParentRevisionClosure((new HashSet<Revision>(Arrays.asList(branche.getRevision()))))
+                                                        .size() > (1000))
+                                )
+                        ))
+                        ;
                 if (predicateResult) {
-                    logger.info("ok");
-
                     result.add(currentElement);
                 }
             }
@@ -56,6 +58,7 @@ public class GraphQuery {
         HashSet<Revision> res = new HashSet<>();
         stack.addAll(param);
         res.addAll(param);
+
         while(!stack.isEmpty()){
             Revision current=stack.pop();
             Set<Revision> children= new HashSet<Revision>(Arrays.asList(current.getParent()));

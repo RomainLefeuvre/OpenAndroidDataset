@@ -23,6 +23,7 @@ public class Graph {
                 SwhUnidirectionalGraph.loadLabelledMapped(this.config.getGraphPath()) :
                 SwhUnidirectionalGraph.loadLabelled(this.config.getGraphPath());
         graph.loadCommitterTimestamps();
+        graph.loadAuthorTimestamps();
         logger.info("Graph loaded");
         logger.info("Loading message");
         graph.properties.loadMessages();
