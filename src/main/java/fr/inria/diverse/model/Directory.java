@@ -1,7 +1,5 @@
 package fr.inria.diverse.model;
 
-import fr.inria.diverse.GraphExplorer;
-import it.unimi.dsi.big.webgraph.labelling.ArcLabelledNodeIterator;
 import it.unimi.dsi.big.webgraph.labelling.ArcLabelledNodeIterator.LabelledArcIterator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -10,9 +8,11 @@ import org.softwareheritage.graph.labels.DirEntry;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-public class Directory extends Node implements IDirectoryChild, Serializable {
+public class Directory extends NodeImpl implements DirectoryChild, Serializable {
     static Logger logger = LogManager.getLogger(Directory.class);
     public Directory(){
         super();
@@ -24,7 +24,7 @@ public class Directory extends Node implements IDirectoryChild, Serializable {
         List<DirectoryEntry> entries=new ArrayList<>();
         LabelledArcIterator it = this.getGraph().labelledSuccessors(this.getNodeId());
         for (long childId; (childId = it.nextLong()) >= 0;) {
-            IDirectoryChild child = null;
+            DirectoryChild child = null;
             switch (this.getGraph().getNodeType(childId)){
                 case DIR:{
                     child=new Directory(childId,this.getGraph());

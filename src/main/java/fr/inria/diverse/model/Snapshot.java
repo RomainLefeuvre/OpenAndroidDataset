@@ -3,17 +3,16 @@ package fr.inria.diverse.model;
 import it.unimi.dsi.big.webgraph.labelling.ArcLabelledNodeIterator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.softwareheritage.graph.SwhType;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 import org.softwareheritage.graph.labels.DirEntry;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-import static org.softwareheritage.graph.SwhType.*;
-
-public class Snapshot extends Node implements Serializable {
+public class Snapshot extends NodeImpl implements Serializable {
     private static final long serialVersionUID = 2166967946176031738L;
     static Logger logger = LogManager.getLogger(Snapshot.class);
     private List<SnapshotBranch> branches;
@@ -35,7 +34,7 @@ public class Snapshot extends Node implements Serializable {
                 DirEntry label = labels[0];
                 String branchName = new String(this.getGraph().getLabelName(label.filenameId));
                 //String branchName = url.replace("refs/heads/", "");
-                ISnapshotChild snapChild=null;
+                SnapshotChild snapChild=null;
                 switch (this.getGraph().getNodeType(snapChildId)){
                     case REV:{
                         snapChild=new Revision(snapChildId,this.getGraph(),true);

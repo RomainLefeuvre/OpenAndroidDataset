@@ -28,7 +28,7 @@ public class GraphQuery {
                 Origin origin = new Origin(currentElement, graphCopy);
                 boolean predicateResult = (origin.getOriginVisits().stream().allMatch(originVisit ->
                         originVisit.getSnapshot().getBranches().stream().allMatch(branche ->
-                                getParentRevisionClosure((new HashSet<Revision>(Arrays.asList(branche.getRevision()))))
+                                RevisionClosure1((new HashSet<Revision>(Arrays.asList(branche.getRevision()))))
                                         .stream().allMatch(closur ->
                                                 closur.getTimestamp() > (1420066800)
                                         )
@@ -39,7 +39,7 @@ public class GraphQuery {
                                         ((branche.getName().equals("refs/heads/master") ||
                                                 branche.getName().equals("refs/heads/main"))
                                                 &&
-                                                getParentRevisionClosure((new HashSet<Revision>(Arrays.asList(branche.getRevision()))))
+                                                RevisionClosure2((new HashSet<Revision>(Arrays.asList(branche.getRevision()))))
                                                         .size() > (1000))
                                 )
                         ))
@@ -53,15 +53,49 @@ public class GraphQuery {
         return results;
     }
 
-    public static Set<Revision> getParentRevisionClosure(Set<Revision> param ){
+    public static Set<Revision> RevisionClosure2(Set<Revision> param ){
         Stack<Revision> stack = new Stack<>();
         HashSet<Revision> res = new HashSet<>();
         stack.addAll(param);
         res.addAll(param);
 
         while(!stack.isEmpty()){
-            Revision current=stack.pop();
-            Set<Revision> children= new HashSet<Revision>(Arrays.asList(current.getParent()));
+            Set<Revision> children= new HashSet<Revision>();
+
+            Revision oclAsSe=stack.pop();
+            try{
+                children= new HashSet<Revision>(Arrays.asList(oclAsSe.getParent()));
+            }catch(Exception e){
+                logger.warn("Error during closure for"+ param);
+                logger.debug("Error during closure for"+ param,e);
+            }
+            for(Revision child: children){
+                if(child!=null && !res.contains(child)){
+                    res.add(child);
+                    stack.add(child);
+                }
+            }
+
+        }
+        return res;
+    }
+
+    public static Set<Revision> RevisionClosure1(Set<Revision> param ){
+        Stack<Revision> stack = new Stack<>();
+        HashSet<Revision> res = new HashSet<>();
+        stack.addAll(param);
+        res.addAll(param);
+
+        while(!stack.isEmpty()){
+            Set<Revision> children= new HashSet<Revision>();
+
+            Revision oclAsSe=stack.pop();
+            try{
+                children= new HashSet<Revision>(Arrays.asList(oclAsSe.getParent()));
+            }catch(Exception e){
+                logger.warn("Error during closure for"+ param);
+                logger.debug("Error during closure for"+ param,e);
+            }
             for(Revision child: children){
                 if(child!=null && !res.contains(child)){
                     res.add(child);

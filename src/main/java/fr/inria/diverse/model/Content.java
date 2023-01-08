@@ -2,7 +2,7 @@ package fr.inria.diverse.model;
 
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 
-public class Content extends Node implements IDirectoryChild{
+public class Content extends NodeImpl implements DirectoryChild {
     private static final long serialVersionUID = 5000328769363386292L;
 
     public Content() {

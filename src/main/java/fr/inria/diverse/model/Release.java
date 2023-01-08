@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.softwareheritage.graph.SwhType;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 
-public class Release extends Node implements ISnapshotChild{
+public class Release extends NodeImpl implements SnapshotChild {
     private static final long serialVersionUID = -2603274610133183403L;
     static Logger logger = LogManager.getLogger(Release.class);
 

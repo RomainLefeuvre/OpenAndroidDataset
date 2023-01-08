@@ -10,7 +10,7 @@ public class SnapshotBranch implements Serializable {
     private static final long serialVersionUID = 1735830627902451577L;
     static Logger logger = LogManager.getLogger(SnapshotBranch.class);
     private String name;
-    private ISnapshotChild child;
+    private SnapshotChild child;
     public Revision getRevision(){
         if(child instanceof Revision){
             return (Revision) child;
@@ -25,7 +25,7 @@ public class SnapshotBranch implements Serializable {
     public SnapshotBranch() {
     }
 
-    public SnapshotBranch(String name, ISnapshotChild child) {
+    public SnapshotBranch(String name, SnapshotChild child) {
         this.name = name;
         this.child = child;
     }
@@ -38,11 +38,11 @@ public class SnapshotBranch implements Serializable {
         this.name = name;
     }
 
-    public ISnapshotChild getChild() {
+    public SnapshotChild getChild() {
         return child;
     }
 
-    public void setChild(ISnapshotChild child) {
+    public void setChild(SnapshotChild child) {
         this.child = child;
     }
 }

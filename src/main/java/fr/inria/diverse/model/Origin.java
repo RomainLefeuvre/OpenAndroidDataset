@@ -1,6 +1,5 @@
 package fr.inria.diverse.model;
 
-import fr.inria.diverse.Graph;
 import it.unimi.dsi.big.webgraph.LazyLongIterator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -10,7 +9,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Origin extends Node implements Serializable {
+public class Origin extends NodeImpl implements Serializable {
     private static final long serialVersionUID = -7579546333573935591L;
     static Logger logger = LogManager.getLogger(Origin.class);
 

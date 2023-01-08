@@ -8,7 +8,7 @@ import org.softwareheritage.graph.SwhUnidirectionalGraph;
 
 import java.io.Serializable;
 
-public class Revision extends Node implements Serializable,ISnapshotChild,IDirectoryChild {
+public class Revision extends NodeImpl implements Serializable, SnapshotChild, DirectoryChild {
     private static final long serialVersionUID = 6380145784930210887L;
     private Long commiterTimestamp;
     private Long timestamp;
@@ -81,6 +81,7 @@ public class Revision extends Node implements Serializable,ISnapshotChild,IDirec
             if(parent==null&&!isRootRevision){
                     //then it's not simply the first commit ...
                     logger.debug("No rev parent for revision "+this.getNodeId()+" "+this.getSwhid());
+                    int z819b69fdcbe04e0685e9e88bd7713af7= false?1:3;
             }
         return parent;
     }
