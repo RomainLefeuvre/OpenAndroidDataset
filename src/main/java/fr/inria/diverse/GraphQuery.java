@@ -1,3 +1,5 @@
+package fr.inria.diverse;
+
 import fr.inria.diverse.Graph;
 import fr.inria.diverse.LambdaExplorer;
 import fr.inria.diverse.model.Origin;
@@ -9,6 +11,7 @@ import org.softwareheritage.graph.SwhUnidirectionalGraph;
 import fr.inria.diverse.tools.ToolBox;
 import java.io.IOException;
 import fr.inria.diverse.model.*;
+import java.util.stream.Collectors;
 import java.util.*;
 
 public class GraphQuery {
@@ -26,21 +29,26 @@ public class GraphQuery {
             @Override
             public void exploreGraphNodeActionOnElement(Long currentElement, SwhUnidirectionalGraph graphCopy) {
                 Origin origin = new Origin(currentElement, graphCopy);
-                boolean predicateResult = (origin.getOriginVisits().stream().allMatch(originVisit ->
+                boolean predicateResult = (origin.getOriginVisits().stream().anyMatch(originVisit ->
                         originVisit.getSnapshot().getBranches().stream().allMatch(branche ->
-                                RevisionClosure1((new HashSet<Revision>(Arrays.asList(branche.getRevision()))))
+                                RevisionClosure2((new HashSet<Revision>(Arrays.asList(branche.getRevision()))).stream().collect(Collectors.toSet()))
                                         .stream().allMatch(closur ->
-                                                closur.getTimestamp() > (1420066800)
+                                                closur.getTimestamp().equals(1420066800)
                                         )
                         )
                 ) &&
                         origin.getOriginVisits().stream().anyMatch(originVisit ->
                                 originVisit.getSnapshot().getBranches().stream().anyMatch(branche ->
-                                        ((branche.getName().equals("refs/heads/master") ||
+                                        (((branche.getName().equals("refs/heads/master") ||
                                                 branche.getName().equals("refs/heads/main"))
                                                 &&
-                                                RevisionClosure2((new HashSet<Revision>(Arrays.asList(branche.getRevision()))))
-                                                        .size() > (1000))
+                                                RevisionClosure4((new HashSet<Revision>(Arrays.asList(branche.getRevision()))).stream().collect(Collectors.toSet()))
+                                                        .size() > (100))
+                                                &&
+                                                DirectoryEntryClosure5(branche.getRevision().getTree().getEntries().stream().collect(Collectors.toSet()))
+                                                        .stream().anyMatch(e ->
+                                                                e.getName().equals("Readme.md")
+                                                        ))
                                 )
                         ))
                         ;
@@ -62,9 +70,9 @@ public class GraphQuery {
         while(!stack.isEmpty()){
             Set<Revision> children= new HashSet<Revision>();
 
-            Revision oclAsSe=stack.pop();
+            Revision var_1=stack.pop();
             try{
-                children= new HashSet<Revision>(Arrays.asList(oclAsSe.getParent()));
+                children= new HashSet<Revision>(Arrays.asList(var_1.getParent()));
             }catch(Exception e){
                 logger.warn("Error during closure for"+ param);
                 logger.debug("Error during closure for"+ param,e);
@@ -80,7 +88,7 @@ public class GraphQuery {
         return res;
     }
 
-    public static Set<Revision> RevisionClosure1(Set<Revision> param ){
+    public static Set<Revision> RevisionClosure4(Set<Revision> param ){
         Stack<Revision> stack = new Stack<>();
         HashSet<Revision> res = new HashSet<>();
         stack.addAll(param);
@@ -89,14 +97,46 @@ public class GraphQuery {
         while(!stack.isEmpty()){
             Set<Revision> children= new HashSet<Revision>();
 
-            Revision oclAsSe=stack.pop();
+            Revision var_3=stack.pop();
             try{
-                children= new HashSet<Revision>(Arrays.asList(oclAsSe.getParent()));
+                children= new HashSet<Revision>(Arrays.asList(var_3.getParent()));
             }catch(Exception e){
                 logger.warn("Error during closure for"+ param);
                 logger.debug("Error during closure for"+ param,e);
             }
             for(Revision child: children){
+                if(child!=null && !res.contains(child)){
+                    res.add(child);
+                    stack.add(child);
+                }
+            }
+
+        }
+        return res;
+    }
+
+    public static Set<DirectoryEntry> DirectoryEntryClosure5(Set<DirectoryEntry> param ){
+        Stack<DirectoryEntry> stack = new Stack<>();
+        HashSet<DirectoryEntry> res = new HashSet<>();
+        stack.addAll(param);
+        res.addAll(param);
+
+        while(!stack.isEmpty()){
+            Set<DirectoryEntry> children= new HashSet<DirectoryEntry>();
+
+            DirectoryEntry entry=stack.pop();
+            try{
+                children= (((entry.getChild() instanceof Directory))?
+                        (((Directory) entry.getChild()).getEntries().stream().collect(Collectors.toSet())
+                        ):
+                        ((new HashSet<DirectoryEntry>(Arrays.asList(entry))))
+                )
+                ;
+            }catch(Exception e){
+                logger.warn("Error during closure for"+ param);
+                logger.debug("Error during closure for"+ param,e);
+            }
+            for(DirectoryEntry child: children){
                 if(child!=null && !res.contains(child)){
                     res.add(child);
                     stack.add(child);
