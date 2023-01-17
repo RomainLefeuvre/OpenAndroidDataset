@@ -49,7 +49,7 @@ public class GraphQuery {
                                                 &&
                                                 DirectoryEntryClosure5(branche.getRevision().getTree().getEntries().stream().collect(Collectors.toSet()))
                                                         .stream().anyMatch(e ->
-                                                                e.getName().equals("README.md")
+                                                                e.getName().equals("AndroidManifest.xml")
                                                         ))
                                 )
                         ))
