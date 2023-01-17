@@ -35,7 +35,7 @@ public class GraphQuery {
                         originVisit.getSnapshot().getBranches().stream().allMatch(branche ->
                                 RevisionClosure2((new HashSet<Revision>(Arrays.asList(branche.getRevision()))).stream().collect(Collectors.toSet()))
                                         .stream().allMatch(closur ->
-                                                closur.getTimestamp() > (1420066800)
+                                                closur.getCommiterTimestamp() > (1420066800)
                                         )
                         )
                 ) &&
