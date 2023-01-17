@@ -13,6 +13,7 @@ import java.util.*;
 
 public abstract class LambdaExplorer<Input,Output extends Serializable> extends GraphExplorer<Output>{
     protected List<Input> inputs;
+    protected String exportName="";
     public LambdaExplorer(Graph graph) {
         super(graph);
     }
@@ -22,6 +23,11 @@ public abstract class LambdaExplorer<Input,Output extends Serializable> extends 
     public LambdaExplorer(Graph graph, List<Input> inputs){
         super(graph);
         this.inputs=inputs;
+    }
+    public LambdaExplorer(Graph graph, List<Input> inputs,String exportName){
+        super(graph);
+        this.inputs=inputs;
+        this.exportName=exportName;
     }
 
     private Class<Input> getParameterClass() {
@@ -45,12 +51,13 @@ public abstract class LambdaExplorer<Input,Output extends Serializable> extends 
     protected String getExportPath() {
         String uuid = UUID.randomUUID().toString();
         return Configuration.getInstance()
-                .getExportPath() +uuid+"/"+uuid;
+                .getExportPath() +exportName+"/"+exportName;
     }
 
     @Override
     public void run() throws InterruptedException, IOException {
         try {
+            this.restoreCheckpoint();
             this.exploreGraphNode(this.inputs!=null ?inputs.size():graph.getGraph().numNodes());
         } catch (Exception e) {
             logger.error("Error while running ",e);

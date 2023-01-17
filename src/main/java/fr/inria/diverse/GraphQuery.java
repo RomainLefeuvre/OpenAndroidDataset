@@ -25,7 +25,9 @@ public class GraphQuery {
 
     public Set<Long> runQuery() throws IOException, InterruptedException {
         Set<Long> results = new HashSet<>();
-        List<Long> selectResult = new LambdaExplorer<Long, Long>(g, this.g.getOrigins()) {
+        String id = "05b860db-1362-45af-989f-e53847c9b1db";
+        logger.info("------Executing query "+id+"------");
+        List<Long> selectResult = new LambdaExplorer<Long, Long>(g, this.g.getOrigins(),id) {
             @Override
             public void exploreGraphNodeActionOnElement(Long currentElement, SwhUnidirectionalGraph graphCopy) {
                 Origin origin = new Origin(currentElement, graphCopy);
@@ -33,7 +35,7 @@ public class GraphQuery {
                         originVisit.getSnapshot().getBranches().stream().allMatch(branche ->
                                 RevisionClosure2((new HashSet<Revision>(Arrays.asList(branche.getRevision()))).stream().collect(Collectors.toSet()))
                                         .stream().allMatch(closur ->
-                                                closur.getTimestamp().equals(1420066800)
+                                                closur.getTimestamp() > (1420066800)
                                         )
                         )
                 ) &&
@@ -43,11 +45,11 @@ public class GraphQuery {
                                                 branche.getName().equals("refs/heads/main"))
                                                 &&
                                                 RevisionClosure4((new HashSet<Revision>(Arrays.asList(branche.getRevision()))).stream().collect(Collectors.toSet()))
-                                                        .size() > (100))
+                                                        .size() > (1000))
                                                 &&
                                                 DirectoryEntryClosure5(branche.getRevision().getTree().getEntries().stream().collect(Collectors.toSet()))
                                                         .stream().anyMatch(e ->
-                                                                e.getName().equals("Readme.md")
+                                                                e.getName().equals("README.md")
                                                         ))
                                 )
                         ))

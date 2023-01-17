@@ -8,6 +8,7 @@ import org.softwareheritage.graph.SwhUnidirectionalGraph;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 public class Graph {
     static Logger logger = LogManager.getLogger(Graph.class);
@@ -47,6 +48,7 @@ public class Graph {
 
     public List<Long> getOrigins() {
         if(origins==null){
+            logger.info("------Loading Origins------");
             try {
                 origins = new LambdaExplorer<Long, Long>(this) {
                     @Override
@@ -57,7 +59,15 @@ public class Graph {
                             }
                         }
                     }
+                    @Override
+                    protected String getExportPath() {
+                        String uuid = UUID.randomUUID().toString();
+                        return Configuration.getInstance()
+                                .getExportPath() +"origins/origins";
+                    }
                 }.explore();
+                logger.info("------Origins Loaded------");
+
             } catch (Exception e) {
                 throw new RuntimeException("Error while retrieving origin");
             }
