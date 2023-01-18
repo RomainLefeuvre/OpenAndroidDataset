@@ -31,8 +31,7 @@ public class GraphQuery {
             @Override
             public void exploreGraphNodeActionOnElement(Long currentElement, SwhUnidirectionalGraph graphCopy) {
                 Origin origin = new Origin(currentElement, graphCopy);
-                boolean predicateResult = (origin.getOriginVisits().stream().anyMatch(originVisit ->
-                        originVisit.getSnapshot().getBranches().stream().allMatch(branche -> {
+                boolean predicateResult = (origin.getOriginVisits().get(0).getSnapshot().getBranches().stream().allMatch(branche -> {
                                     Revision current = branche.getRevision();
                                     Revision parent = current!=null?current.getParent():null;
                                     while(parent!=null){
@@ -43,8 +42,7 @@ public class GraphQuery {
                                 }
                         )
                 ) &&
-                        origin.getOriginVisits().stream().anyMatch(originVisit ->
-                                originVisit.getSnapshot().getBranches().stream().anyMatch(branche ->
+                        origin.getOriginVisits().get(0).getSnapshot().getBranches().stream().anyMatch(branche ->
                                         (((branche.getName().equals("refs/heads/master") ||
                                                 branche.getName().equals("refs/heads/main"))
                                                 &&
