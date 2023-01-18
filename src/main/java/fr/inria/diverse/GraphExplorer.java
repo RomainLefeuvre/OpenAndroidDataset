@@ -66,7 +66,7 @@ public abstract class GraphExplorer<T extends Serializable> {
                 Long i;
                 while ((i = this.counter.incrementAndGet()) < size) {
                     if (Duration.between(timestamp, Instant.now())
-                            .toMinutes() > this.config.getCheckPointIntervalInMinutes()) {
+                            .toMinutes() > this.config.getCheckPointIntervalInMinutes()/3) {
                         timestamp = Instant.now();
                         logger.info("Doing action number " + i + " over " + size + " thread " + finalThread);
                     }

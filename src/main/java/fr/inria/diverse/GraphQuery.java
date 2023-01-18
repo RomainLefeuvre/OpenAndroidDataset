@@ -54,7 +54,7 @@ public class GraphQuery {
                                                                 e.getName().equals("AndroidManifest.xml")
                                                         ))
                                 )
-                        ))
+
                         ;
                 if (predicateResult) {
                     result.add(currentElement);
