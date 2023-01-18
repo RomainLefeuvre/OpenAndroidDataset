@@ -3,6 +3,7 @@ package fr.inria.diverse;
 import fr.inria.diverse.tools.Configuration;
 import fr.inria.diverse.tools.Executor;
 import fr.inria.diverse.tools.ToolBox;
+import org.apache.hadoop.util.Time;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
@@ -28,7 +29,7 @@ public abstract class GraphExplorer<T extends Serializable> {
     //The graph we will explore
     protected Graph graph;
     //The semaphore used to perform thread safe checkpoint
-    protected Semaphore checkpointSynchro;
+    protected  Semaphore checkpointSynchro;
     //A counter to keep the index of the exploration
     protected AtomicLong counter;
     //The result of the exploration that will be exported
@@ -39,7 +40,7 @@ public abstract class GraphExplorer<T extends Serializable> {
     public GraphExplorer(Graph graph) {
         this.result=new ArrayList<>();
         this.graph = graph;
-        this.checkpointSynchro = new Semaphore(this.config.getThreadNumber());
+        this.checkpointSynchro = new Semaphore(this.config.getThreadNumber(),true);
         this.counter = new AtomicLong(-1);
     }
 
