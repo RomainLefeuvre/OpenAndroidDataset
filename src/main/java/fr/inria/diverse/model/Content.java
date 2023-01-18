@@ -13,6 +13,6 @@ public class Content extends NodeImpl implements DirectoryChild {
     }
 
     public long getLength(){
-       return this.getGraph().getContentLength(this.getNodeId());
+       return this.getGraph().copy().getContentLength(this.getNodeId());
     }
 }

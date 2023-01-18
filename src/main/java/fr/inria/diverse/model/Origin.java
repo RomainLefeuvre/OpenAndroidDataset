@@ -43,7 +43,7 @@ public class Origin extends NodeImpl implements Serializable {
 
     public String getOriginUrl() {
         if(originUrl==null){
-            originUrl=this.getGraph().getUrl(this.getNodeId());
+            originUrl=this.getGraph().copy().getUrl(this.getNodeId());
         }
         return originUrl;
     }

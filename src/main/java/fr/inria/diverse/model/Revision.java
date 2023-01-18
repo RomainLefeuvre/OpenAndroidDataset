@@ -33,7 +33,7 @@ public class Revision extends NodeImpl implements Serializable, SnapshotChild, D
 
     public Long getCommiterTimestamp() {
         if(this.commiterTimestamp==null){
-            this.commiterTimestamp=this.getGraph().getCommitterTimestamp(this.getNodeId());
+            this.commiterTimestamp=this.getGraph().copy().getCommitterTimestamp(this.getNodeId());
             if(this.commiterTimestamp==null){
                 throw new RuntimeException("No commiter timestamp for "+this.getNodeId());
             }
@@ -44,7 +44,7 @@ public class Revision extends NodeImpl implements Serializable, SnapshotChild, D
 
     public Long getTimestamp() {
         if(this.timestamp==null){
-            Long t =this.getGraph().getAuthorTimestamp(this.getNodeId());
+            Long t =this.getGraph().copy().getAuthorTimestamp(this.getNodeId());
             this.timestamp= t==null?-1:t;
         }
         return timestamp;
@@ -53,7 +53,7 @@ public class Revision extends NodeImpl implements Serializable, SnapshotChild, D
 
     public String getCommiter() {
         if(this.commiter==null){
-            this.commiter=""+this.getGraph().getCommitterId(this.getNodeId());
+            this.commiter=""+this.getGraph().copy().getCommitterId(this.getNodeId());
         }
         return commiter;
     }
@@ -66,11 +66,12 @@ public class Revision extends NodeImpl implements Serializable, SnapshotChild, D
      */
     public Revision getParent() {
         //if(parent==null&& !noParent){
-            LazyLongIterator childIt = (this.getGraph().copy())
+            SwhUnidirectionalGraph graphCopy=this.getGraph().copy();
+            LazyLongIterator childIt = graphCopy
                     .successors(this.getNodeId());
             Revision parent =null;
             for (long successorNode; (successorNode = childIt.nextLong()) != -1 && parent==null;){
-                switch (this.getGraph().getNodeType(successorNode)){
+                switch (graphCopy.getNodeType(successorNode)){
                     case REV:{
                         parent=new Revision(successorNode,this.getGraph());
                         break;
@@ -83,11 +84,12 @@ public class Revision extends NodeImpl implements Serializable, SnapshotChild, D
 
 
     public Directory getTree() {
-        LazyLongIterator childIt = (this.getGraph().copy())
+        SwhUnidirectionalGraph graph_copy = this.getGraph().copy();
+        LazyLongIterator childIt = graph_copy
                 .successors(this.getNodeId());
         Directory tree =null;
         for (long successorNode; (successorNode = childIt.nextLong()) != -1 && tree==null;){
-            switch (this.getGraph().getNodeType(successorNode)){
+            switch (graph_copy.getNodeType(successorNode)){
                 case DIR:{
                     tree=new Directory(successorNode,this.getGraph());
                     break;
@@ -106,14 +108,14 @@ public class Revision extends NodeImpl implements Serializable, SnapshotChild, D
 
     public String getMessage() {
         if(this.message==null){
-            this.getGraph().getMessage(this.getNodeId());
+            this.getGraph().copy().getMessage(this.getNodeId());
         }
         return message;
     }
 
     public String getAuthor() {
         if(this.author==null){
-            this.author=""+this.getGraph().getAuthorId(this.getNodeId());
+            this.author=""+this.getGraph().copy().getAuthorId(this.getNodeId());
         }
         return author;
     }

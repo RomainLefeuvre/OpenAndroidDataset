@@ -27,15 +27,16 @@ public class Snapshot extends NodeImpl implements Serializable {
     public List<SnapshotBranch> getBranches() {
         if(this.branches == null) {
             this.branches = new ArrayList<>();
-            ArcLabelledNodeIterator.LabelledArcIterator it = this.getGraph().copy()
+            SwhUnidirectionalGraph graphCopy = this.getGraph().copy();
+            ArcLabelledNodeIterator.LabelledArcIterator it = graphCopy
                     .labelledSuccessors(this.getNodeId());
             for (long snapChildId; (snapChildId = it.nextLong()) != -1; ) {
                 final DirEntry[] labels = (DirEntry[]) it.label().get();
                 DirEntry label = labels[0];
-                String branchName = new String(this.getGraph().getLabelName(label.filenameId));
+                String branchName = new String(graphCopy.getLabelName(label.filenameId));
                 //String branchName = url.replace("refs/heads/", "");
                 SnapshotChild snapChild=null;
-                switch (this.getGraph().getNodeType(snapChildId)){
+                switch (graphCopy.getNodeType(snapChildId)){
                     case REV:{
                         snapChild=new Revision(snapChildId,this.getGraph());
                         break;

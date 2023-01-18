@@ -31,7 +31,7 @@ public class Release extends NodeImpl implements SnapshotChild {
 
     public Long getTimestamp() {
         if(this.timestamp==null){
-            this.timestamp=this.getGraph().getAuthorTimestamp(this.getNodeId());
+            this.timestamp=this.getGraph().copy().getAuthorTimestamp(this.getNodeId());
         }
         return timestamp;
     }
@@ -42,10 +42,10 @@ public class Release extends NodeImpl implements SnapshotChild {
 
 
     public Revision getRevision() {
-        LazyLongIterator childIt = (this.getGraph().copy())
-                .successors(this.getNodeId());
+        SwhUnidirectionalGraph graphCopy = this.getGraph().copy();
+        LazyLongIterator childIt = graphCopy.successors(this.getNodeId());
         Long candidateNodeId = childIt.nextLong();
-        if(this.getGraph().getNodeType(candidateNodeId)== SwhType.REV){
+        if(graphCopy.getNodeType(candidateNodeId)== SwhType.REV){
             this.revision= new Revision(candidateNodeId,this.getGraph());
         }else{
             logger.warn("No revision Node for release node "+this.getNodeId());             
@@ -58,7 +58,7 @@ public class Release extends NodeImpl implements SnapshotChild {
     }
     public String getMessage() {
         if(this.message==null){
-            this.getGraph().getMessage(this.getNodeId());
+            this.getGraph().copy().getMessage(this.getNodeId());
         }
         return message;
     }
@@ -69,7 +69,7 @@ public class Release extends NodeImpl implements SnapshotChild {
 
     public String getAuthor() {
         if(this.author==null){
-            this.author=""+this.getGraph().getAuthorId(this.getNodeId());
+            this.author=""+this.getGraph().copy().getAuthorId(this.getNodeId());
         }
         return author;
     }

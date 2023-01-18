@@ -22,10 +22,11 @@ public class Directory extends NodeImpl implements DirectoryChild, Serializable 
     }
     public List<DirectoryEntry> getEntries() {
         List<DirectoryEntry> entries=new ArrayList<>();
-        LabelledArcIterator it = this.getGraph().labelledSuccessors(this.getNodeId());
+        SwhUnidirectionalGraph graphCopy = this.getGraph().copy();
+        LabelledArcIterator it = graphCopy.labelledSuccessors(this.getNodeId());
         for (long childId; (childId = it.nextLong()) >= 0;) {
             DirectoryChild child = null;
-            switch (this.getGraph().getNodeType(childId)){
+            switch (graphCopy.getNodeType(childId)){
                 case DIR:{
                     child=new Directory(childId,this.getGraph());
                     break;
@@ -42,7 +43,7 @@ public class Directory extends NodeImpl implements DirectoryChild, Serializable 
             //A child can have multiple label ie, the same node is present multiple time in the folder under different name
             // e.g. it can contain multiple empty file
             for (DirEntry label : labels) {
-                String entryName=new String(this.getGraph().getLabelName(label.filenameId));
+                String entryName=new String(graphCopy.getLabelName(label.filenameId));
                 entries.add(new DirectoryEntry(child,entryName));
             }
         }
