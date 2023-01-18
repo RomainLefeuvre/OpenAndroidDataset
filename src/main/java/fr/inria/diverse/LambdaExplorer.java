@@ -49,7 +49,6 @@ public abstract class LambdaExplorer<Input,Output extends Serializable> extends 
 
     @Override
     protected String getExportPath() {
-        String uuid = UUID.randomUUID().toString();
         return Configuration.getInstance()
                 .getExportPath() +exportName+"/"+exportName;
     }

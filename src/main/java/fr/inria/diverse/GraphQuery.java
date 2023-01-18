@@ -156,6 +156,5 @@ public class GraphQuery {
     public static void main(String[] args) throws IOException, InterruptedException {
         Configuration.init();
         Set<Long> queryResult = new GraphQuery().runQuery();
-        ToolBox.exportObjectToJson(queryResult, Configuration.getInstance().getExportPath() + "/query/results");
     }
 }
