@@ -37,7 +37,7 @@ public class Snapshot extends NodeImpl implements Serializable {
                 SnapshotChild snapChild=null;
                 switch (this.getGraph().getNodeType(snapChildId)){
                     case REV:{
-                        snapChild=new Revision(snapChildId,this.getGraph(),true);
+                        snapChild=new Revision(snapChildId,this.getGraph());
                         break;
                     }
                     case REL: {

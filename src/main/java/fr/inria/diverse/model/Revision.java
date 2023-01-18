@@ -18,18 +18,14 @@ public class Revision extends NodeImpl implements Serializable, SnapshotChild, D
    // private IDirectoryChild tree;
     private String message;
     private String author;
-    private Boolean isRootRevision;
     static Logger logger = LogManager.getLogger(Revision.class);
     public Revision() {
         super();
     }
     public Revision(long nodeId, SwhUnidirectionalGraph g) {
-        this(nodeId,g,false);
-    }
-    public Revision(long nodeId, SwhUnidirectionalGraph g,Boolean isFirstRevision) {
         super(nodeId,g);
-        this.isRootRevision =isFirstRevision;
     }
+
 
     public int compareTo(@NotNull Revision rev) {
         return this.getCommiterTimestamp().compareTo(rev.getCommiterTimestamp());
@@ -38,6 +34,9 @@ public class Revision extends NodeImpl implements Serializable, SnapshotChild, D
     public Long getCommiterTimestamp() {
         if(this.commiterTimestamp==null){
             this.commiterTimestamp=this.getGraph().getCommitterTimestamp(this.getNodeId());
+            if(this.commiterTimestamp==null){
+                throw new RuntimeException("No commiter timestamp for "+this.getNodeId());
+            }
         }
         return commiterTimestamp;
     }
@@ -78,11 +77,7 @@ public class Revision extends NodeImpl implements Serializable, SnapshotChild, D
                     }
                 }
             }
-            if(parent==null&&!isRootRevision){
-                    //then it's not simply the first commit ...
-                    logger.debug("No rev parent for revision "+this.getNodeId()+" "+this.getSwhid());
-                    int z819b69fdcbe04e0685e9e88bd7713af7= false?1:3;
-            }
+
         return parent;
     }
 

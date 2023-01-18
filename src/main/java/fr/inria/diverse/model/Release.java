@@ -46,7 +46,7 @@ public class Release extends NodeImpl implements SnapshotChild {
                 .successors(this.getNodeId());
         Long candidateNodeId = childIt.nextLong();
         if(this.getGraph().getNodeType(candidateNodeId)== SwhType.REV){
-            this.revision= new Revision(candidateNodeId,this.getGraph(),true);
+            this.revision= new Revision(candidateNodeId,this.getGraph());
         }else{
             logger.warn("No revision Node for release node "+this.getNodeId());             
         }

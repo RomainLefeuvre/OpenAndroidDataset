@@ -32,11 +32,15 @@ public class GraphQuery {
             public void exploreGraphNodeActionOnElement(Long currentElement, SwhUnidirectionalGraph graphCopy) {
                 Origin origin = new Origin(currentElement, graphCopy);
                 boolean predicateResult = (origin.getOriginVisits().stream().anyMatch(originVisit ->
-                        originVisit.getSnapshot().getBranches().stream().allMatch(branche ->
-                                RevisionClosure2((new HashSet<Revision>(Arrays.asList(branche.getRevision()))).stream().collect(Collectors.toSet()))
-                                        .stream().allMatch(closur ->
-                                                closur.getCommiterTimestamp() > (1420066800)
-                                        )
+                        originVisit.getSnapshot().getBranches().stream().allMatch(branche -> {
+                                    Revision current = branche.getRevision();
+                                    Revision parent = current!=null?current.getParent():null;
+                                    while(parent!=null){
+                                        current=parent;
+                                        parent=parent.getParent();
+                                    }
+                                    return current!=null ?current.getCommiterTimestamp() > (1420066800):false;
+                                }
                         )
                 ) &&
                         origin.getOriginVisits().stream().anyMatch(originVisit ->
