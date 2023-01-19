@@ -1,20 +1,23 @@
 package fr.inria.diverse;
 
 import fr.inria.diverse.tools.Configuration;
+import fr.inria.diverse.tools.ToolBox;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.softwareheritage.graph.SWHID;
 import org.softwareheritage.graph.SwhType;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Graph {
     static Logger logger = LogManager.getLogger(Graph.class);
     protected SwhUnidirectionalGraph graph;
     protected Configuration config = Configuration.getInstance();
     protected List<Long> origins;
+    public static Set<Long> lastSnap = new HashSet<>();
     /**
      * Load the transposed Graph
      */
@@ -32,6 +35,9 @@ public class Graph {
         logger.info("Loading label");
         graph.properties.loadLabelNames();
         logger.info("Label loaded");
+        loadLastVisit();
+        logger.info("Last visit Loaded");
+
     }
 
     private boolean isMappedMemoryActivated() {
@@ -73,6 +79,11 @@ public class Graph {
             }
         }
         return origins;
+    }
+
+    public void loadLastVisit(){
+        List<List<String>> lastVisits = ToolBox.readCsv(Configuration.getInstance().getGraphPath()+".lastVisit.csv");
+        this.lastSnap = lastVisits.stream().map(e->this.graph.getNodeId(new SWHID("swh:1:snp:"+e.get(2)))).collect(Collectors.toSet());
     }
 
 

@@ -6,6 +6,7 @@ import fr.inria.diverse.model.Origin;
 import fr.inria.diverse.tools.Configuration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.softwareheritage.graph.SWHID;
 import org.softwareheritage.graph.SwhType;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 import fr.inria.diverse.tools.ToolBox;
@@ -31,29 +32,18 @@ public class GraphQuery {
             @Override
             public void exploreGraphNodeActionOnElement(Long currentElement, SwhUnidirectionalGraph graphCopy) {
                 Origin origin = new Origin(currentElement, graphCopy);
-                boolean predicateResult = (origin.getOriginVisits().get(0).getSnapshot().getBranches().stream().allMatch(branche -> {
-                                    Revision current = branche.getRevision();
-                                    Revision parent = current!=null?current.getParent():null;
-                                    while(parent!=null){
-                                        current=parent;
-                                        parent=parent.getParent();
-                                    }
-                                    return current!=null ?current.getCommiterTimestamp() > (1420066800):false;
-                                }
+                boolean predicateResult =
+                        origin.getLastVisit().getSnapshot().getBranches().stream().anyMatch(branche ->
+                                ((branche.getName().equals("refs/heads/master") ||
+                                        branche.getName().equals("refs/heads/main"))
+                                        &&
+                                        optimizationPredicate1_3(branche)
+                                        &&
+                                        DirectoryEntryClosure5(branche.getRevision().getTree().getEntries().stream().collect(Collectors.toSet()))
+                                                .stream().anyMatch(e ->
+                                                        e.getName().equals("AndroidManifest.xml")
+                                                ))
                         )
-                ) &&
-                        origin.getOriginVisits().get(0).getSnapshot().getBranches().stream().anyMatch(branche ->
-                                        (((branche.getName().equals("refs/heads/master") ||
-                                                branche.getName().equals("refs/heads/main"))
-                                                &&
-                                                RevisionClosure4((new HashSet<Revision>(Arrays.asList(branche.getRevision()))).stream().collect(Collectors.toSet()))
-                                                        .size() > (1000))
-                                                &&
-                                                DirectoryEntryClosure5(branche.getRevision().getTree().getEntries().stream().collect(Collectors.toSet()))
-                                                        .stream().anyMatch(e ->
-                                                                e.getName().equals("AndroidManifest.xml")
-                                                        ))
-                                )
 
                         ;
                 if (predicateResult) {
@@ -64,60 +54,18 @@ public class GraphQuery {
         results.addAll(selectResult);
         return results;
     }
-
-    public static Set<Revision> RevisionClosure2(Set<Revision> param ){
-        Stack<Revision> stack = new Stack<>();
-        HashSet<Revision> res = new HashSet<>();
-        stack.addAll(param);
-        res.addAll(param);
-
-        while(!stack.isEmpty()){
-            Set<Revision> children= new HashSet<Revision>();
-
-            Revision var_1=stack.pop();
-            try{
-                children= new HashSet<Revision>(Arrays.asList(var_1.getParent()));
-            }catch(Exception e){
-                logger.warn("Error during closure for"+ param);
-                logger.debug("Error during closure for"+ param,e);
-            }
-            for(Revision child: children){
-                if(child!=null && !res.contains(child)){
-                    res.add(child);
-                    stack.add(child);
-                }
-            }
-
+    public static boolean optimizationPredicate1_3(SnapshotBranch b){
+        Revision current = b.getRevision();
+        Revision parent = current!=null?current.getParent():null;
+        int count =1;
+        while(parent!=null){
+            current=parent;
+            parent=parent.getParent();
+            count++;
         }
-        return res;
+        return (current.getCommiterTimestamp() > 1420066800)&& (count>1000);
     }
 
-    public static Set<Revision> RevisionClosure4(Set<Revision> param ){
-        Stack<Revision> stack = new Stack<>();
-        HashSet<Revision> res = new HashSet<>();
-        stack.addAll(param);
-        res.addAll(param);
-
-        while(!stack.isEmpty()){
-            Set<Revision> children= new HashSet<Revision>();
-
-            Revision var_3=stack.pop();
-            try{
-                children= new HashSet<Revision>(Arrays.asList(var_3.getParent()));
-            }catch(Exception e){
-                logger.warn("Error during closure for"+ param);
-                logger.debug("Error during closure for"+ param,e);
-            }
-            for(Revision child: children){
-                if(child!=null && !res.contains(child)){
-                    res.add(child);
-                    stack.add(child);
-                }
-            }
-
-        }
-        return res;
-    }
 
     public static Set<DirectoryEntry> DirectoryEntryClosure5(Set<DirectoryEntry> param ){
         Stack<DirectoryEntry> stack = new Stack<>();

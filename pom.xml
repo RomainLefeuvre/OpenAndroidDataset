@@ -26,6 +26,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>com.opencsv</groupId>
+            <artifactId>opencsv</artifactId>
+            <version>5.7.1</version>
+        </dependency>
+        <dependency>
             <groupId>org.softwareheritage.graph</groupId>
             <artifactId>swh-graph</artifactId>
             <version>1.0.3-SNAPSHOT</version>

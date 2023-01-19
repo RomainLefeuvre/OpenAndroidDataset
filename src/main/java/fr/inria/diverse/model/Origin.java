@@ -1,5 +1,6 @@
 package fr.inria.diverse.model;
 
+import fr.inria.diverse.Graph;
 import it.unimi.dsi.big.webgraph.LazyLongIterator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,6 +36,15 @@ public class Origin extends NodeImpl implements Serializable {
         }
         //Todo Restore it from a file
         return originVisits;
+    }
+
+    public OriginVisit getLastVisit(){
+        for(OriginVisit originVisit :this.getOriginVisits()){
+            if(Graph.lastSnap.contains(originVisit.snapshot.getNodeId())){
+                return originVisit;
+            }
+        }
+        throw new RuntimeException("Last Visit not available for origin node "+this.getNodeId());
     }
 
     public void setOriginVisit(List<OriginVisit> originVisit) {

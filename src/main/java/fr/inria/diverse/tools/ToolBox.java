@@ -1,6 +1,8 @@
 package fr.inria.diverse.tools;
 
 import com.google.gson.Gson;
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvValidationException;
 import org.softwareheritage.graph.SwhUnidirectionalGraph;
 import org.softwareheritage.graph.labels.DirEntry;
 
@@ -9,6 +11,9 @@ import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class ToolBox {
     public static <T> T loadJsonObject(String fileName, Type type) {
@@ -84,5 +89,21 @@ public class ToolBox {
     public static String getFileName(DirEntry labelId, SwhUnidirectionalGraph graphCopy) {
         return new String(graphCopy.getLabelName(labelId.filenameId));
     }
+    public static List<List<String>> readCsv(String uri) {
+        List<List<String>> records = new ArrayList<List<String>>();
+        try (
+                CSVReader csvReader = new CSVReader(new FileReader(uri));) {
+            String[] values = null;
+            while ((values = csvReader.readNext()) != null) {
+                records.add(Arrays.asList(values));
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException | CsvValidationException e) {
+            e.printStackTrace();
+        }
+        return records;
+    }
+
 
 }
