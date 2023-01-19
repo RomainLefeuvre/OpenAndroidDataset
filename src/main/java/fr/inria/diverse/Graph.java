@@ -83,7 +83,13 @@ public class Graph {
 
     public void loadLastVisit(){
         List<List<String>> lastVisits = ToolBox.readCsv(Configuration.getInstance().getGraphPath()+".lastVisit.csv");
-        this.lastSnap = lastVisits.stream().map(e->this.graph.getNodeId(new SWHID("swh:1:snp:"+e.get(2)))).collect(Collectors.toSet());
+        for(List<String> l : lastVisits){
+            try {
+                lastSnap.add(this.graph.getNodeId(new SWHID("swh:1:snp:" + l.get(2))));
+            }catch(Exception e){
+                logger.warn("error while retrieving last visit "+ l);
+            }
+        }
     }
 
 
